@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -20,7 +21,6 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import java.awt.GridLayout;
 import java.awt.Font;
 import java.awt.Color;
@@ -32,8 +32,8 @@ public class Spreadsheet extends JFrame{
 	int rows, cols;
 	
 	JPanel pano;
-	JTextArea txt;
-	JScrollPane despla;
+	JButton btnResolver;
+	JScrollPane desplaLateral, desplaHorizontal;
 	JTable table;
 	JMenuBar menuBar;
 	JMenu mnuModificar, mnuArchivo, mnuGuardar;
@@ -50,6 +50,7 @@ public class Spreadsheet extends JFrame{
 
 		pano = new JPanel();
 		pano.setLayout(new GridLayout(0, 1, 0, 0));
+		pano.setAutoscrolls(true);
 
 		/* Creacion de la menubar y los submenus requeridos */	
 		menuBar = new JMenuBar();
@@ -87,28 +88,38 @@ public class Spreadsheet extends JFrame{
 		
 		/* Creacion de la tabla con los valores recogidos y asignacion de los margenes. */
 		table = new JTable(this.rows + 1, this.cols + 1);
-		for (int i = 0; i < table.getRowCount(); i++) {
-			//TODO Poner no editable azul y en el numero que le toque a cada fila
+		for (int i = 1; i < table.getRowCount(); i++) {
+			table.setValueAt(i, i, 0);
+			//Ponerla de color azul y no editable
 		}
-		for (int i = 0; i < table.getColumnCount(); i++) {
+		for (int i = 1; i < table.getColumnCount(); i++) {
+			table.setValueAt(Solver.getLetter(i), 0, i);
 			//TODO Poner no editable azul y la letra que le toque a cada columna
 		}
-		pano.add(table);
 		
 		/* Creacion de la etiqueta de control en la parte posterior */
 		label = new JLabel("Marcador de que fila esta siendo editada");
 		label.setBackground(Color.LIGHT_GRAY);
 		label.setFont(new Font("Arial", Font.PLAIN, 12));
-		pano.add(label);
+		
+		/* Creacion del boton para resolver la hoja. */
+		btnResolver = new JButton("Resolver");
+		btnResolver.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Comprobar si la hoja de calculo esta llena y resolverla
+			}
+		});
 		
 		/* Asignacion del panel a la ventana */
+		pano.add(label);
+		pano.add(table);
 		getContentPane().add(pano);
 		
 		/* Creacion de cada uno de los listener asociados a cada submenu */
 		mnuItemNuevo.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent arg0){
 				fichero=null;
-				txt.setText (" ");
 				mnuItemGuardar.setEnabled (false);
 			}
 		});
@@ -126,12 +137,9 @@ public class Spreadsheet extends JFrame{
 					in=new FileInputStream(fichero);
 					BufferedReader br;
 					br=new BufferedReader(new InputStreamReader(in));
-					String linea;
-					txt.setText(" ");
 					//El contenido que vamos leyendo lo metemos en el JTextArea
-					while ((linea=br.readLine() ) !=null){
+					while ((br.readLine() ) !=null){
 						//Este \n puede ser diferente (/n/r) en Linux
-						txt.append(linea + "\n");
 					}
 					br.close();
 					mnuItemGuardar.setEnabled(true);
@@ -151,14 +159,11 @@ public class Spreadsheet extends JFrame{
 
 		mnuItemDeshacer.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
-				txt.copy();
 			}
 		});
 
 		mnuItemRehacer.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				txt.cut();
-			}
+			public void actionPerformed(ActionEvent e){			}
 		});
 
 		mnuItemGuardar.addActionListener(new ActionListener(){
@@ -166,7 +171,6 @@ public class Spreadsheet extends JFrame{
 				try{
 					PrintWriter pw;
 					pw=new PrintWriter (fichero);
-					pw.write (txt.getText());
 					pw.close ();
 				}catch (FileNotFoundException e){
 					e.printStackTrace () ;
@@ -183,7 +187,6 @@ public class Spreadsheet extends JFrame{
 					fichero=dlg.getSelectedFile ();
 					PrintWriter pw;
 					pw=new PrintWriter (fichero);
-					pw.write (txt.getText () );
 					pw.close ();
 				}catch (FileNotFoundException e){
 					e.printStackTrace ();

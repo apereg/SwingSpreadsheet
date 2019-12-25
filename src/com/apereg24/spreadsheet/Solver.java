@@ -18,5 +18,11 @@ public class Solver {
 	public static boolean areColsOk(int input) {
 		return input >= 0 && input <= 18278;
 	}
+
+	public static String getLetter(int i) {
+		// TODO Auto-generated method stub
+		char a = (char)(i + '@');
+		return Character.toString(a);
+	}
 	
 }
