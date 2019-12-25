@@ -1,45 +1,34 @@
 package com.apereg24.spreadsheet;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 
-import javax.swing.BorderFactory;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.table.DefaultTableModel;
 import java.awt.GridLayout;
 import java.awt.Font;
 import java.awt.Color;
 
 public class Spreadsheet extends JFrame{
 	
+	private static final long serialVersionUID = 1L;
+
 	int rows, cols;
 	
 	JPanel pano;
@@ -116,104 +105,78 @@ public class Spreadsheet extends JFrame{
 		getContentPane().add(pano);
 		
 		/* Creacion de cada uno de los listener asociados a cada submenu */
-		
-		mnuItemNuevo.addActionListener (new ActionListener ( )
-		{
-			public void actionPerformed (ActionEvent arg0)
-			{
+		mnuItemNuevo.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0){
 				fichero=null;
 				txt.setText (" ");
 				mnuItemGuardar.setEnabled (false);
 			}
 		});
 
-		mnuItemAbrir.addActionListener(new ActionListener()
-		{
-			public void actionPerformed (ActionEvent arg0)
-			{
+		mnuItemAbrir.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent arg0){
 				JFileChooser dlg;
-				dlg=new JFileChooser ( );
-				dlg.showDialog (null, "Abrir");
-				fichero=dlg.getSelectedFile ();
+				dlg=new JFileChooser();
+				dlg.showDialog(null, "Abrir");
+				fichero=dlg.getSelectedFile();
 				
 				//leemos el fichero seleccionado
 				FileInputStream in;
 				try{
-					in=new FileInputStream (fichero);
+					in=new FileInputStream(fichero);
 					BufferedReader br;
-					br=new BufferedReader (new InputStreamReader (in) );
+					br=new BufferedReader(new InputStreamReader(in));
 					String linea;
-					txt.setText (" ");
-					
+					txt.setText(" ");
 					//El contenido que vamos leyendo lo metemos en el JTextArea
-					while ((linea=br.readLine() ) !=null)
-					{
+					while ((linea=br.readLine() ) !=null){
 						//Este \n puede ser diferente (/n/r) en Linux
-						txt.append (linea + "\n");
+						txt.append(linea + "\n");
 					}
-					
-					br.close ();
-					mnuItemGuardar.setEnabled (true);
-				}
-				catch (FileNotFoundException e)
-				{
+					br.close();
+					mnuItemGuardar.setEnabled(true);
+				}catch (FileNotFoundException e){
 					e.printStackTrace ();
-				}
-				catch (IOException e)
-				{
+				} catch (IOException e){
 					e.printStackTrace ();
 				}
 			}
 		});
 
-		mnuItemSalir.addActionListener (new ActionListener ()
-		{
-			public void actionPerformed (ActionEvent e)
-			{
+		mnuItemSalir.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
 				System.exit (0);
 			}
 		});
 
-		mnuItemDeshacer.addActionListener (new ActionListener ()
-		{
-			public void actionPerformed (ActionEvent e)
-			{
-				txt.copy ();
+		mnuItemDeshacer.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				txt.copy();
 			}
 		});
 
-		mnuItemRehacer.addActionListener (new ActionListener ()
-		{
-			public void actionPerformed (ActionEvent e)
-			{
-				txt.cut ();
+		mnuItemRehacer.addActionListener(new ActionListener(){
+			public void actionPerformed(ActionEvent e){
+				txt.cut();
 			}
 		});
 
-		mnuItemGuardar.addActionListener (new ActionListener()
-		{
-			public void actionPerformed (ActionEvent arg0)
-			{
-				try
-				{
+		mnuItemGuardar.addActionListener(new ActionListener(){
+			public void actionPerformed (ActionEvent arg0){
+				try{
 					PrintWriter pw;
 					pw=new PrintWriter (fichero);
 					pw.write (txt.getText());
 					pw.close ();
-				}
-				catch (FileNotFoundException e)
-				{
+				}catch (FileNotFoundException e){
 					e.printStackTrace () ;
 				}
 			}
 		});
 
-		mnuItemGuardarComo.addActionListener (new ActionListener ()
-		{
-			public void actionPerformed (ActionEvent arg0)
-			{
-				try
-				{
+		mnuItemGuardarComo.addActionListener(new ActionListener(){
+			public void actionPerformed (ActionEvent arg0){
+				try{
 					JFileChooser dlg;
 					dlg=new JFileChooser ();
 					dlg.showDialog (null, "guardar como");
@@ -222,21 +185,18 @@ public class Spreadsheet extends JFrame{
 					pw=new PrintWriter (fichero);
 					pw.write (txt.getText () );
 					pw.close ();
-				}
-
-				catch (FileNotFoundException e)
-				{
+				}catch (FileNotFoundException e){
 					e.printStackTrace ();
 				}
 			}
 		});
 	}
 	
-	public static void main(String args[])
-	{
+	public static void main(String args[]){
 		Spreadsheet te = new Spreadsheet();
 		te.setBounds(0,0,400,400);
 		te.setVisible(true);
 	}
+	
 }
 

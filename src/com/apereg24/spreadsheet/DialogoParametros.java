@@ -12,13 +12,14 @@ import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
 public class DialogoParametros extends JDialog {
+	
+	private static final long serialVersionUID = 1L;
 	
 	private JTextField tfRows, tfCols;
 	
