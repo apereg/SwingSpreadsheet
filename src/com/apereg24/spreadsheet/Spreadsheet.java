@@ -33,14 +33,15 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
-import javax.swing.event.TableModelListener;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 import javax.swing.ScrollPaneConstants;
+import java.awt.Font;
+import java.awt.Color;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class Spreadsheet extends JFrame{
-	
+
 	int rows, cols;
 	
 	JPanel pano;
@@ -95,8 +96,6 @@ public class Spreadsheet extends JFrame{
 		mnuModificar.add(mnuItemRehacer);
 		mnuBar.add(mnuModificar);
 		
-		this.setJMenuBar(mnuBar);
-		
 		/* Creacion del JDialog que recoge los parametros de inicio de la ejecucion. */
 		DialogoParametros params = new DialogoParametros(this);
 		this.rows = params.getRows();
@@ -111,21 +110,25 @@ public class Spreadsheet extends JFrame{
 			}
 		};
 		table = new JTable(model);
+		table.setBackground(Color.WHITE);
+		table.setFont(new Font("Arial", Font.PLAIN, 12));
 		
 		/* Se añaden las filas y columnas con los identificadores */
 		JTable tableAux = new JTable(this.rows+1, this.cols+1); // Se crea una tabla aux para obtener los nombres de las columnas
-		model.addColumn(tableAux.getColumnName(0));
+		model.addColumn("Index");
 		for (int i = 0; i <= this.rows; i++) {
 			model.addRow(new String[] {""});
 			if(i > 0) table.setValueAt(i, i, 0);	
 		}
-		for (int i = 1; i <= this.cols ; i++) {
+		for (int i = 0; i <= this.cols ; i++) {
 			model.addColumn(tableAux.getColumnName(i));
-			table.setValueAt(table.getColumnName(i-1), 0, i);
+			if(i > 0) table.setValueAt(table.getColumnName(i), 0, i);
 		}
 		
 		/* Asociacion de la jtable a un scroll */
 		table.setTableHeader(null);
+		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		table.doLayout();
 		scroll = new JScrollPane(table);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -133,16 +136,32 @@ public class Spreadsheet extends JFrame{
 		
 		
 		/* Creacion de la etiqueta que marca la fila que esta siendo editada */
-		editLabel = new JLabel("No se está modificando ninguna celda");
+		editLabel = new JLabel("No se está seleccionando ninguna celda");
+		editLabel.setBackground(Color.ORANGE);
+		editLabel.setFont(new Font("Arial", Font.PLAIN, 16));
 		editLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		pano.add(editLabel, BorderLayout.NORTH);
 		
 		/* Creacion del boton de resolver situado al sur de la interfaz */
 		btnResolver = new JButton("Resolver");
+		btnResolver.setBackground(Color.LIGHT_GRAY);
+		btnResolver.setFont(new Font("Arial", Font.BOLD, 16));
 		pano.add(btnResolver, BorderLayout.SOUTH);
 		
 		/* Ultimos retoques de la interfaz */
+		this.setJMenuBar(mnuBar);
 		getContentPane().add(pano);
+		
+		/* Listener que modifica el label segun la celda sobre la que se esta seleccionando */
+		table.addMouseListener(new java.awt.event.MouseAdapter() {
+			@Override
+			 public void mouseClicked(java.awt.event.MouseEvent evt) {
+			    int row = table.rowAtPoint(evt.getPoint());
+			    String col = table.getColumnName(table.columnAtPoint(evt.getPoint()));
+			    if(row == 0 || col == "Index") editLabel.setText("Se esta pulsando sobre el encabezado");
+			    else editLabel.setText("Se esta pulsando sobre la celda " +col+""+row);
+			 }
+		});
 		
 		/* Accion del boton de resolver */
 		btnResolver.addActionListener(new ActionListener() {
@@ -265,22 +284,21 @@ public class Spreadsheet extends JFrame{
 	
 	public static void main(String args[]){
 		Spreadsheet te = new Spreadsheet();
-		te.setBounds(0,0,400,400);
+		te.setBounds(0,0,500,500);
 		te.setVisible(true);
 	}
 	
 }
 
 class DialogoParametros extends JDialog {
-	
-	private static final long serialVersionUID = 1L;
-	
+
 	private JTextField tfRows, tfCols;
 	
 	public DialogoParametros(Spreadsheet spreadsheet) {
 		
 		super(spreadsheet, "Parametros de la hoja", true);		
 		
+		/* Colocacion de todos los componentes del Verifier */
 		JPanel panelBotones = new JPanel();
 		JPanel panelIzdo = new JPanel();
 		JPanel panelDerecho = new JPanel();
