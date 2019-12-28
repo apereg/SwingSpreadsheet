@@ -33,6 +33,10 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
+import javax.swing.event.TableModelListener;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import javax.swing.ScrollPaneConstants;
 
 public class Spreadsheet extends JFrame{
@@ -99,7 +103,29 @@ public class Spreadsheet extends JFrame{
 		this.cols = params.getCols();
 		
 		/* Creacion de la tabla con los valores recogidos del JDialog */
-		table = new JTable(this.rows, this.cols);
+		DefaultTableModel model = new DefaultTableModel(){
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				if(row == 0 || column == 0) return false;
+				return true;
+			}
+		};
+		table = new JTable(model);
+		
+		/* Se añaden las filas y columnas con los identificadores */
+		JTable tableAux = new JTable(this.rows+1, this.cols+1); // Se crea una tabla aux para obtener los nombres de las columnas
+		model.addColumn(tableAux.getColumnName(0));
+		for (int i = 0; i <= this.rows; i++) {
+			model.addRow(new String[] {""});
+			if(i > 0) table.setValueAt(i, i, 0);	
+		}
+		for (int i = 1; i <= this.cols ; i++) {
+			model.addColumn(tableAux.getColumnName(i));
+			table.setValueAt(table.getColumnName(i-1), 0, i);
+		}
+		
+		/* Asociacion de la jtable a un scroll */
+		table.setTableHeader(null);
 		scroll = new JScrollPane(table);
 		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
 		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
@@ -338,3 +364,4 @@ class DialogoParametros extends JDialog {
 	
 	
 }
+
