@@ -1,5 +1,7 @@
 package com.apereg24.spreadsheet;
 
+import java.util.Arrays;
+
 public class Solver {
 	
 	private String[][] entry;
@@ -112,4 +114,16 @@ public class Solver {
 	public int[][] getSolution() throws SpreadsheetException {
 		return this.solution; //TODO Si no esta lleno es que no se ha resuelto la hoja y tengo que tirar una excepcion
 	}
+	
+	public static void print2D(int mat[][]) {
+        // Loop through all rows
+        for (int[] row : mat) {
+
+            // converting each row as string
+            // and then printing in a separate line
+            System.out.println(Arrays.toString(row));
+        }
+        System.out.println("\n");
+    }
+
 }

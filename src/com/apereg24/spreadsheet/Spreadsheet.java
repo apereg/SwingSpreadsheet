@@ -11,6 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -61,6 +62,12 @@ public class Spreadsheet extends JFrame{
 	JMenuItem mnuItemDeshacer, mnuItemRehacer;
 	
 	File fichero;
+
+	public static void main(String args[]){
+		Spreadsheet te = new Spreadsheet();
+		te.setBounds(0,0,500,500);
+		te.setVisible(true);
+	}
 
 	public Spreadsheet(){
 		
@@ -138,10 +145,7 @@ public class Spreadsheet extends JFrame{
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		table.doLayout();
 		scroll = new JScrollPane(table);
-		scroll.setVerticalScrollBarPolicy(ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
-		scroll.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_ALWAYS);
 		pano.add(scroll, BorderLayout.CENTER);
-		
 		
 		/* Creacion de la etiqueta que marca la fila que esta siendo editada */
 		editLabel = new JLabel("No se está seleccionando ninguna celda");
@@ -179,42 +183,61 @@ public class Spreadsheet extends JFrame{
 				String[][] tableToSolve = new String[rows][cols];
 				StringBuffer out = new StringBuffer("");
 				
-				for (int i = 1; i < tableToSolve.length; i++) {
-					for (int j = 1; j < tableToSolve.length; j++) {
-						String aux = "";
-						aux = table.getValueAt(i, j) + "";
+				for (int i = 1; i <= tableToSolve.length; i++) {
+					for (int j = 1; j <= tableToSolve.length; j++) {
+						String aux = table.getValueAt(i, j) + "";
+						if(table.getValueAt(i, j) == null) aux = "";
 						if(aux == "") {
-							out.append("La posicion " + Solver.getLetter(cols) + "" + rows + "esta vacia");
+							out.append("La posicion " + Solver.getLetter(i) + "" + j + " esta vacia\n");
 							table.setValueAt("0", i, j);
-							tableToSolve[i][j] = "0";
+							tableToSolve[i-1][j-1] = "0";
 						} else {
-							tableToSolve[i][j] = aux;
+							tableToSolve[i - 1][j - 1] = aux;
 						}
 					}
 				}
 
 				int[][] solution = new int[rows][cols];
 				if (!out.toString().isEmpty()) {
-					out.append("Se sustituira/n por 0\n");
-					JOptionPane.showMessageDialog(null, out.toString(), "Celdas vacias", JOptionPane.WARNING_MESSAGE);
-				} else {
-					try {
-						Solver solver = new Solver(rows, cols, tableToSolve);
-						solver.resolve();
-						solution = solver.getSolution();
-						for (int i = 0; i < solution.length; i++) {
-							for (int j = 0; j < solution.length; j++) {
-								model.setValueAt(solution[i][j], i + 1, j + 1);
-							}
-						}
-					} catch (SpreadsheetException e2) {
-						JOptionPane.showMessageDialog(null, e2.toString(), "No se pudo resolver",
-								JOptionPane.ERROR_MESSAGE);
+					if (out.toString().length() > 116) {
+						out.setLength(0);
+						out.append("Varias celdas estan vacias.\n");
+						out.append("Se sustituiran por 0.\n");
+					} else if (out.toString().length() >= 25 && out.toString().length() <= 29) {
+						out.append("Se sustituira por 0.\n");
+					} else {
+						out.append("Se sustituiran por 0.\n");
 					}
-					
+					JOptionPane.showMessageDialog(null, out.toString(), "Celdas vacias", JOptionPane.WARNING_MESSAGE);
 				}
 
-				System.out.println("Se pulso el calcula pero nanai");
+				try {
+
+					for (int i = 0; i < tableToSolve.length; i++) {
+						for (int j = 0; j < tableToSolve[0].length; j++) {
+							System.out.print(tableToSolve[i][j]);
+							if (j == tableToSolve.length - 1)
+								System.out.print("\n");
+							else
+								System.out.print(" ");
+						}
+					}
+
+					Solver solver = new Solver(rows, cols, tableToSolve);
+					Scanner sc = new Scanner(System.in);
+					sc.nextLine();
+					solver.resolve();
+					solution = solver.getSolution();
+					for (int i = 0; i < solution.length; i++) {
+						for (int j = 0; j < solution.length; j++) {
+							model.setValueAt(solution[i][j], i + 1, j + 1);
+						}
+					}
+				} catch (SpreadsheetException e2) {
+					JOptionPane.showMessageDialog(null, e2.toString(), "No se pudo resolver",
+							JOptionPane.ERROR_MESSAGE);
+				}
+
 			}
 		});
 				
@@ -295,12 +318,6 @@ public class Spreadsheet extends JFrame{
 				}
 			}
 		});
-	}
-	
-	public static void main(String args[]){
-		Spreadsheet te = new Spreadsheet();
-		te.setBounds(0,0,500,500);
-		te.setVisible(true);
 	}
 	
 }
