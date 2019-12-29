@@ -11,7 +11,6 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.Scanner;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -34,15 +33,9 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
-import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.ScrollPaneConstants;
 import java.awt.Font;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 
 public class Spreadsheet extends JFrame{
 
@@ -221,7 +214,7 @@ public class Spreadsheet extends JFrame{
 						}
 					}
 				} catch (SpreadsheetException e2) {
-					JOptionPane.showMessageDialog(null, e2.toString(), "No se pudo resolver", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e2.getMessage(), "No se pudo resolver", JOptionPane.ERROR_MESSAGE);
 				}
 
 			}

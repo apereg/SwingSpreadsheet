@@ -1,7 +1,5 @@
 package com.apereg24.spreadsheet;
 
-import java.util.Arrays;
-
 public class Solver {
 	
 	private String[][] entry;
@@ -29,28 +27,32 @@ public class Solver {
 		}
 	}
 	
-	public void resolve() {		
+	public void resolve() throws SpreadsheetException {		
 		for (int i = 0; i < this.numRows; i++) {
 			for (int j = 0; j < this.numCols; j++) {
 				if(!(this.entry[i][j].isEmpty())) {
-					this.solution[i][j] = resolveFormula(this.entry[i][j]);
+					try {
+						this.solution[i][j] = resolveFormula(this.entry[i][j], i, j);
+					}catch(StackOverflowError e) {
+						throw new SpreadsheetException("Error en la celda " +getLetter(i)+""+(j+1)+ "\nDa lugar a dependencias cíclicas.\n");
+					}
 					this.entry[i][j] = "";
 				}
 			}
 		}
 	}
 
-	private int resolveCell(int row, int col) {
-		if (row > this.numRows || row < 0 || col > this.numCols || col < 0)
-			//TODO Tirar excepcion
-		if (!(this.entry[row][col].isEmpty())) 
-			return resolveFormula(this.entry[row][col]);
-		return this.solution[row][col];
+	private int resolveCell(int row, int column) throws SpreadsheetException {
+		if (row > this.numRows || row < 0 || column > this.numCols || column < 0) throw new SpreadsheetException("Error en la celda " +getLetter(row)+""+(column+1)+ "\nNo esta correctamente redactada.\n");
+
+		if (!(this.entry[row][column].isEmpty())) 
+			return resolveFormula(this.entry[row][column], row, column);
+		return this.solution[row][column];
 	}
 
-	private int resolveFormula(String formula) {
+	private int resolveFormula(String formula, int row, int column) throws SpreadsheetException {
 		int result = 0, letra = -1;
-		//TODO filtrar si no es una formula;
+		if(!this.entry[row][column].startsWith("=")) throw new SpreadsheetException("Error en la celda " +getLetter(row)+""+(column+1)+ "\nNo es una formula.\n");
 		System.out.println("Se va a resolver la formula " +formula);
 		formula = formula.substring(1, formula.length());
 		formula = formula.replaceAll("\\+", ",");
@@ -70,20 +72,31 @@ public class Solver {
 						Letter.append(formulaSplitted[i].charAt(k));
 					}
 					else {
-						//TODO Tirar excepcion
+						throw new SpreadsheetException("Error en la celda " +getLetter(row)+""+(column+1)+ "\nNo esta correctamente redactada.\n");
 					}
 				}
 			
 			}
-			if(letra == -1) {} //TODO tirar excepcion
-			if(Num.toString().isEmpty() || Letter.toString().isEmpty()) {}
-				//TODO tirar excepcion
+			if(letra == -1) throw new SpreadsheetException("Error en la celda " +getLetter(row)+""+(column+1)+ "\nNo esta correctamente redactada.\n");
+			if(Num.toString().isEmpty() || Letter.toString().isEmpty()) throw new SpreadsheetException("Error en la celda " +getLetter(row)+""+(column+1)+ "\nNo esta correctamente redactada.\n");
 			
 			int num = Integer.parseInt(Num.toString())-1;
 			
 			result += resolveCell(num, letra);
 		}
 		return result;
+	}
+
+	public int[][] getSolution() throws SpreadsheetException {
+		return this.solution;
+	}
+
+	public static boolean areRowsOk(int input) {
+		return input >= 0 && input <= 999;
+	}
+
+	public static boolean areColsOk(int input) {
+		return input >= 0 && input <= 18278;
 	}
 
 	public static boolean isANum(String input) {
@@ -95,44 +108,26 @@ public class Solver {
 		return true;
 	}
 	
-	public static boolean areRowsOk(int input) {
-		return input >= 0 && input <= 999;
-	}
-	
-	public static boolean areColsOk(int input) {
-		return input >= 0 && input <= 18278;
-	}
-
-	public static String getLetter(int input) {
-		// TODO Auto-generated method stub
-		char a = (char)(input + '@');
-		return Character.toString(a);
-	}
-	
 	private static int getAsciiNum(char c) {
 		return(((int)c)-64);
 	}
 	
+	public static String getLetter(int i) {
+	    int quot = i/26;
+	    int rem = i%26;
+	    char letter = (char)((int)'A' + rem);
+	    if( quot == 0 ) {
+	        return ""+letter;
+	    } else {
+	        return getLetter(quot-1) + letter;
+	    }
+	}
+
 	private static int getFormulaCol(String s) {
 		int suma = 0;
 		for (int i = 0; i < s.length(); i++)
 			suma += Math.pow(26, i) * getAsciiNum(s.charAt(i));
 		return --suma;
 	}
-	
-	public int[][] getSolution() throws SpreadsheetException {
-		return this.solution; //TODO Si no esta lleno es que no se ha resuelto la hoja y tengo que tirar una excepcion
-	}
-	
-	public static void print2D(int mat[][]) {
-        // Loop through all rows
-        for (int[] row : mat) {
-
-            // converting each row as string
-            // and then printing in a separate line
-            System.out.println(Arrays.toString(row));
-        }
-        System.out.println("\n");
-    }
 
 }
