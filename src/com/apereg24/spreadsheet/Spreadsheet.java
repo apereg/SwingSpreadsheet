@@ -33,10 +33,13 @@ import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.ScrollPaneConstants;
 import java.awt.Font;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -110,8 +113,8 @@ public class Spreadsheet extends JFrame{
 			}
 		};
 		table = new JTable(model);
-		table.setBackground(Color.WHITE);
 		table.setFont(new Font("Arial", Font.PLAIN, 12));
+		//table.setDefaultRenderer(Object.class, new GradeRenderer());
 		
 		/* Se añaden las filas y columnas con los identificadores */
 		JTable tableAux = new JTable(this.rows+1, this.cols+1); // Se crea una tabla aux para obtener los nombres de las columnas
@@ -120,9 +123,14 @@ public class Spreadsheet extends JFrame{
 			model.addRow(new String[] {""});
 			if(i > 0) table.setValueAt(i, i, 0);	
 		}
-		for (int i = 0; i <= this.cols ; i++) {
-			model.addColumn(tableAux.getColumnName(i));
-			if(i > 0) table.setValueAt(table.getColumnName(i), 0, i);
+		for (int i = 1; i <= this.cols ; i++) {
+			model.addColumn(tableAux.getColumnName(i-1));
+			table.setValueAt(table.getColumnName(i), 0, i);
+		}
+		
+		final TableColour tce = new TableColour();
+		for (int i = 0; i <= this.cols; i++) {
+			table.getColumnModel().getColumn(i).setCellRenderer(tce);
 		}
 		
 		/* Asociacion de la jtable a un scroll */
@@ -167,40 +175,47 @@ public class Spreadsheet extends JFrame{
 		btnResolver.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				/*
-				// TODO Comprobar si la hoja de calculo esta llena y resolverla
-				
 				DefaultTableModel model = (DefaultTableModel) table.getModel();
 				String[][] tableToSolve = new String[rows][cols];
-				StringBuffer exception = new StringBuffer("");
-				for (int i = 0; i < tableToSolve.length; i++) {
-					for (int j = 0; j < tableToSolve.length; j++) {
-						if(table.getValueAt(i+1, j+1).toString().length() == 0) {
-							exception.append("La posici�n " +Solver.getLetter(cols)+ "" +rows+ "est� vacia");
+				StringBuffer out = new StringBuffer("");
+				
+				for (int i = 1; i < tableToSolve.length; i++) {
+					for (int j = 1; j < tableToSolve.length; j++) {
+						String aux = "";
+						aux = table.getValueAt(i, j) + "";
+						if(aux == "") {
+							out.append("La posicion " + Solver.getLetter(cols) + "" + rows + "esta vacia");
+							table.setValueAt("0", i, j);
+							tableToSolve[i][j] = "0";
 						} else {
-							tableToSolve[i][j] = table.getValueAt(i+1, j+1).toString();
+							tableToSolve[i][j] = aux;
 						}
 					}
 				}
-				
+
 				int[][] solution = new int[rows][cols];
-				if(!exception.toString().isEmpty()) {
-					JOptionPane.showMessageDialog(null,exception.toString(), "No se pudo resolver", JOptionPane.ERROR_MESSAGE);
+				if (!out.toString().isEmpty()) {
+					out.append("Se sustituira/n por 0\n");
+					JOptionPane.showMessageDialog(null, out.toString(), "Celdas vacias", JOptionPane.WARNING_MESSAGE);
 				} else {
 					try {
-						solution = Solver.solveSheet(tableToSolve);
-					} catch(SpreadsheetException e2) {
-						JOptionPane.showMessageDialog(null,e2.toString(), "No se pudo resolver", JOptionPane.ERROR_MESSAGE);
-					}
-					for (int i = 0; i < solution.length; i++) {
-						for (int j = 0; j < solution.length; j++) {
-							model.setValueAt(solution[i][j], i+1, j+1);
+						Solver solver = new Solver(rows, cols, tableToSolve);
+						solver.resolve();
+						solution = solver.getSolution();
+						for (int i = 0; i < solution.length; i++) {
+							for (int j = 0; j < solution.length; j++) {
+								model.setValueAt(solution[i][j], i + 1, j + 1);
+							}
 						}
+					} catch (SpreadsheetException e2) {
+						JOptionPane.showMessageDialog(null, e2.toString(), "No se pudo resolver",
+								JOptionPane.ERROR_MESSAGE);
 					}
-				}	
-				*/
+					
+				}
+
 				System.out.println("Se pulso el calcula pero nanai");
-			}		
+			}
 		});
 				
 		/* Creacion de cada uno de los listener asociados a cada submenu */
@@ -383,3 +398,26 @@ class DialogoParametros extends JDialog {
 	
 }
 
+class TableColour extends javax.swing.table.DefaultTableCellRenderer {
+
+	@Override
+	public java.awt.Component getTableCellRendererComponent(javax.swing.JTable table, java.lang.Object value,
+			boolean isSelected, boolean hasFocus, int row, int column) {
+		java.awt.Component cellComponent = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row,
+				column);
+		if (row == 0) {
+			cellComponent.setBackground(new java.awt.Color(204, 204, 204));
+			cellComponent.setFont(new Font("Arial", Font.BOLD, 12));
+		} else if (column == 0) {
+			cellComponent.setBackground(new java.awt.Color(162, 196, 201));
+			cellComponent.setFont(new Font("Arial", Font.BOLD, 12));
+		} else if (row % 2 == 0) {
+			cellComponent.setBackground(new java.awt.Color(243, 243, 243));
+		} else {
+			cellComponent.setBackground(java.awt.Color.WHITE);
+		}
+
+		return cellComponent;
+	}
+
+}
