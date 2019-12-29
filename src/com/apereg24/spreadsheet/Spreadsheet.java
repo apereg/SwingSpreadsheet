@@ -212,30 +212,16 @@ public class Spreadsheet extends JFrame{
 				}
 
 				try {
-
-					for (int i = 0; i < tableToSolve.length; i++) {
-						for (int j = 0; j < tableToSolve[0].length; j++) {
-							System.out.print(tableToSolve[i][j]);
-							if (j == tableToSolve.length - 1)
-								System.out.print("\n");
-							else
-								System.out.print(" ");
-						}
-					}
-
 					Solver solver = new Solver(rows, cols, tableToSolve);
-					Scanner sc = new Scanner(System.in);
-					sc.nextLine();
 					solver.resolve();
 					solution = solver.getSolution();
-					for (int i = 0; i < solution.length; i++) {
-						for (int j = 0; j < solution.length; j++) {
-							model.setValueAt(solution[i][j], i + 1, j + 1);
+					for (int i = 1; i <= solution.length; i++) {
+						for (int j = 1; j <= solution.length; j++) {
+							model.setValueAt(solution[i-1][j-1], i, j);
 						}
 					}
 				} catch (SpreadsheetException e2) {
-					JOptionPane.showMessageDialog(null, e2.toString(), "No se pudo resolver",
-							JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e2.toString(), "No se pudo resolver", JOptionPane.ERROR_MESSAGE);
 				}
 
 			}
