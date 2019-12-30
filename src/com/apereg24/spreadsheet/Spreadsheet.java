@@ -34,6 +34,8 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
+
 import java.awt.Font;
 import java.awt.Color;
 
@@ -234,16 +236,16 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				int resp = JOptionPane.YES_OPTION;
 				if (!isEmpty()) {
-					resp = JOptionPane.showConfirmDialog(null, "¿Quiere continuar?", "Hoja actual sin guardar",
-							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
+							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
 				if (resp == JOptionPane.YES_OPTION) {
 					fichero = null;
 					mnuItemGuardar.setEnabled(false);
 					int[] newParams = askForParameters();
 					int newRows = newParams[0];
-					int numCols = newParams[1];
-					//TODO El redimensionamenting
+					int newCols = newParams[1];
+					redimensionateTable(newRows, newCols);
 				}
 			}
 		});
@@ -370,6 +372,40 @@ public class Spreadsheet extends JFrame {
 	private int[] askForParameters() {
 		DialogoParametros params = new DialogoParametros(this);
 		return new int[] { params.getRows(), params.getCols() };
+	}
+	
+	private void redimensionateTable(int newRows, int newCols) {
+		JTable tableAux;
+		if(newCols > cols) tableAux = new JTable(newRows, newCols);
+		else tableAux = new JTable(rows, cols);
+		
+		DefaultTableModel model = (DefaultTableModel) table.getModel();
+		
+		if(newCols > cols) {
+			for (int i = cols + 1; i <= newCols; i++) {
+				model.addColumn(tableAux.getColumnName(i - 1));
+				table.setValueAt(table.getColumnName(i), 0, i);
+			}
+		} else if(newCols < cols){
+			model.setColumnCount(newCols+1);
+		}
+		
+		if(newRows > rows) {
+			for (int i = rows + 1; i <= newRows; i++) {
+				model.addRow(new String[] { "" });
+				table.setValueAt(i, i, 0);
+			}
+		} else if(newRows < rows) {
+			model.setRowCount(newRows + 1);
+		}
+		final TableColour tce = new TableColour();
+		for (int i = 0; i <= newCols; i++) {
+			table.getColumnModel().getColumn(i).setCellRenderer(tce);
+		}
+		
+		this.rows = newRows;
+		this.cols = newCols;
+		
 	}
 
 }
