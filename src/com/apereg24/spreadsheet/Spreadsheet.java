@@ -37,44 +37,44 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.Font;
 import java.awt.Color;
 
-public class Spreadsheet extends JFrame{
+public class Spreadsheet extends JFrame {
 
 	int rows, cols;
-	
+
 	JPanel pano;
 	JLabel editLabel;
 	JScrollPane scroll;
 	JTable table;
 	JButton btnResolver;
-	
+
 	JScrollPane desplaLateral, desplaHorizontal;
-	
+
 	JMenuBar mnuBar;
 	JMenu mnuModificar, mnuArchivo, mnuGuardar;
 	JMenuItem mnuItemNuevo, mnuItemAbrir, mnuItemGuardar, mnuItemGuardarComo, mnuItemSalir;
 	JMenuItem mnuItemDeshacer, mnuItemRehacer;
-	
+
 	File fichero;
 
-	public static void main(String args[]){
+	public static void main(String args[]) {
 		Spreadsheet te = new Spreadsheet();
-		te.setBounds(0,0,500,500);
+		te.setBounds(0, 0, 500, 500);
 		te.setVisible(true);
 	}
 
-	public Spreadsheet(){
-		
+	public Spreadsheet() {
+
 		this.setTitle("Hoja de calculo");
-		this.setBounds(0,0,1300,444);
+		this.setBounds(0, 0, 1300, 444);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		pano = new JPanel();
 		pano.setAutoscrolls(true);
 		pano.setLayout(new BorderLayout(0, 0));
 
-		/* Creacion de la menubar y los submenus requeridos */	
+		/* Creacion de la menubar y los submenus requeridos */
 		mnuBar = new JMenuBar();
-		
+
 		mnuArchivo = new JMenu("Archivo");
 		mnuItemNuevo = new JMenuItem("Nuevo");
 		mnuItemAbrir = new JMenuItem("Abrir");
@@ -84,90 +84,97 @@ public class Spreadsheet extends JFrame{
 		mnuItemGuardarComo = new JMenuItem("Guardar como");
 		mnuGuardar.add(mnuItemGuardar);
 		mnuGuardar.add(mnuItemGuardarComo);
-		mnuGuardar.add (new JSeparator());
+		mnuGuardar.add(new JSeparator());
 		mnuItemSalir = new JMenuItem("Salir");
 		mnuArchivo.add(mnuItemNuevo);
 		mnuArchivo.add(mnuItemAbrir);
 		mnuArchivo.add(mnuGuardar);
 		mnuArchivo.add(mnuItemSalir);
 		mnuBar.add(mnuArchivo);
-		
+
 		mnuModificar = new JMenu("Modificar");
 		mnuItemDeshacer = new JMenuItem("Deshacer");
 		mnuItemRehacer = new JMenuItem("Rehacer");
 		mnuModificar.add(mnuItemDeshacer);
 		mnuModificar.add(mnuItemRehacer);
 		mnuBar.add(mnuModificar);
-		
+
 		/* Creacion del JDialog que recoge los parametros de inicio de la ejecucion. */
 		DialogoParametros params = new DialogoParametros(this);
 		this.rows = params.getRows();
 		this.cols = params.getCols();
-		
+
 		/* Creacion de la tabla con los valores recogidos del JDialog */
-		DefaultTableModel model = new DefaultTableModel(){
+		DefaultTableModel model = new DefaultTableModel() {
 			@Override
 			public boolean isCellEditable(int row, int column) {
-				if(row == 0 || column == 0) return false;
+				if (row == 0 || column == 0)
+					return false;
 				return true;
 			}
 		};
 		table = new JTable(model);
 		table.setFont(new Font("Arial", Font.PLAIN, 12));
-		//table.setDefaultRenderer(Object.class, new GradeRenderer());
-		
+		// table.setDefaultRenderer(Object.class, new GradeRenderer());
+
 		/* Se añaden las filas y columnas con los identificadores */
-		JTable tableAux = new JTable(this.rows+1, this.cols+1); // Se crea una tabla aux para obtener los nombres de las columnas
+		JTable tableAux = new JTable(this.rows + 1, this.cols + 1); // Se crea una tabla aux para obtener los nombres de
+																	// las columnas
 		model.addColumn("Index");
 		for (int i = 0; i <= this.rows; i++) {
-			model.addRow(new String[] {""});
-			if(i > 0) table.setValueAt(i, i, 0);	
+			model.addRow(new String[] { "" });
+			if (i > 0)
+				table.setValueAt(i, i, 0);
 		}
-		for (int i = 1; i <= this.cols ; i++) {
-			model.addColumn(tableAux.getColumnName(i-1));
+		for (int i = 1; i <= this.cols; i++) {
+			model.addColumn(tableAux.getColumnName(i - 1));
 			table.setValueAt(table.getColumnName(i), 0, i);
 		}
-		
+
 		final TableColour tce = new TableColour();
 		for (int i = 0; i <= this.cols; i++) {
 			table.getColumnModel().getColumn(i).setCellRenderer(tce);
 		}
-		
+
 		/* Asociacion de la jtable a un scroll */
 		table.setTableHeader(null);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 		table.doLayout();
 		scroll = new JScrollPane(table);
 		pano.add(scroll, BorderLayout.CENTER);
-		
+
 		/* Creacion de la etiqueta que marca la fila que esta siendo editada */
 		editLabel = new JLabel("No se está seleccionando ninguna celda");
 		editLabel.setBackground(Color.ORANGE);
 		editLabel.setFont(new Font("Arial", Font.PLAIN, 16));
 		editLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		pano.add(editLabel, BorderLayout.NORTH);
-		
+
 		/* Creacion del boton de resolver situado al sur de la interfaz */
 		btnResolver = new JButton("Resolver");
 		btnResolver.setBackground(Color.LIGHT_GRAY);
 		btnResolver.setFont(new Font("Arial", Font.BOLD, 16));
 		pano.add(btnResolver, BorderLayout.SOUTH);
-		
+
 		/* Ultimos retoques de la interfaz */
 		this.setJMenuBar(mnuBar);
 		getContentPane().add(pano);
-		
-		/* Listener que modifica el label segun la celda sobre la que se esta seleccionando */
+
+		/*
+		 * Listener que modifica el label segun la celda sobre la que se esta
+		 * seleccionando
+		 */
 		table.addMouseListener(new java.awt.event.MouseAdapter() {
 			@Override
-			 public void mouseClicked(java.awt.event.MouseEvent evt) {
-			    int row = table.rowAtPoint(evt.getPoint());
-			    String col = table.getColumnName(table.columnAtPoint(evt.getPoint()));
-			    if(row == 0 || col == "Index") editLabel.setText("Se esta pulsando sobre el encabezado");
-			    else editLabel.setText("Se esta pulsando sobre la celda " +col+""+row);
-			 }
+			public void mouseClicked(java.awt.event.MouseEvent evt) {
+				int row = table.rowAtPoint(evt.getPoint());
+				String col = table.getColumnName(table.columnAtPoint(evt.getPoint()));
+				if (row == 0 || col == "Index")
+					editLabel.setText("Se esta pulsando sobre el encabezado");
+				else
+					editLabel.setText("Se esta pulsando sobre la celda " + col + "" + row);
+			}
 		});
-		
 		/* Accion del boton de resolver */
 		btnResolver.addActionListener(new ActionListener() {
 			@Override
@@ -175,15 +182,16 @@ public class Spreadsheet extends JFrame{
 				DefaultTableModel model = (DefaultTableModel) table.getModel();
 				String[][] tableToSolve = new String[rows][cols];
 				StringBuffer out = new StringBuffer("");
-				
+
 				for (int i = 1; i <= tableToSolve.length; i++) {
 					for (int j = 1; j <= tableToSolve.length; j++) {
 						String aux = table.getValueAt(i, j) + "";
-						if(table.getValueAt(i, j) == null) aux = "";
-						if(aux == "") {
+						if (table.getValueAt(i, j) == null)
+							aux = "";
+						if (aux == "") {
 							out.append("La posicion " + Solver.getLetter(i) + "" + j + " esta vacia\n");
 							table.setValueAt("0", i, j);
-							tableToSolve[i-1][j-1] = "0";
+							tableToSolve[i - 1][j - 1] = "0";
 						} else {
 							tableToSolve[i - 1][j - 1] = aux;
 						}
@@ -210,105 +218,170 @@ public class Spreadsheet extends JFrame{
 					solution = solver.getSolution();
 					for (int i = 1; i <= solution.length; i++) {
 						for (int j = 1; j <= solution.length; j++) {
-							model.setValueAt(solution[i-1][j-1], i, j);
+							model.setValueAt(solution[i - 1][j - 1], i, j);
 						}
 					}
 				} catch (SpreadsheetException e2) {
-					JOptionPane.showMessageDialog(null, e2.getMessage(), "No se pudo resolver", JOptionPane.ERROR_MESSAGE);
+					JOptionPane.showMessageDialog(null, e2.getMessage(), "No se pudo resolver",
+							JOptionPane.ERROR_MESSAGE);
 				}
 
 			}
 		});
-				
+
 		/* Creacion de cada uno de los listener asociados a cada submenu */
-		mnuItemNuevo.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent arg0){
-				fichero=null;
-				mnuItemGuardar.setEnabled (false);
+		mnuItemNuevo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				int resp = JOptionPane.YES_OPTION;
+				if (!isEmpty()) {
+					resp = JOptionPane.showConfirmDialog(null, "¿Quiere continuar?", "Hoja actual sin guardar",
+							JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+				}
+				if (resp == JOptionPane.YES_OPTION) {
+					fichero = null;
+					mnuItemGuardar.setEnabled(false);
+					int[] newParams = askForParameters();
+					int newRows = newParams[0];
+					int numCols = newParams[1];
+					//TODO El redimensionamenting
+				}
 			}
 		});
 
-		mnuItemAbrir.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent arg0){
+		mnuItemAbrir.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
 				JFileChooser dlg;
-				dlg=new JFileChooser();
+				dlg = new JFileChooser();
 				dlg.showDialog(null, "Abrir");
-				fichero=dlg.getSelectedFile();
-				
-				//leemos el fichero seleccionado
+				fichero = dlg.getSelectedFile();
+
+				// leemos el fichero seleccionado
 				FileInputStream in;
-				try{
-					in=new FileInputStream(fichero);
+				try {
+					in = new FileInputStream(fichero);
 					BufferedReader br;
-					br=new BufferedReader(new InputStreamReader(in));
-					//El contenido que vamos leyendo lo metemos en el JTextArea
-					while ((br.readLine() ) !=null){
-						//Este \n puede ser diferente (/n/r) en Linux
+					br = new BufferedReader(new InputStreamReader(in));
+					// El contenido que vamos leyendo lo metemos en el JTextArea
+					while ((br.readLine()) != null) {
+						// Este \n puede ser diferente (/n/r) en Linux
 					}
 					br.close();
 					mnuItemGuardar.setEnabled(true);
-				}catch (FileNotFoundException e){
-					e.printStackTrace ();
-				} catch (IOException e){
-					e.printStackTrace ();
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
+				} catch (IOException e) {
+					e.printStackTrace();
 				}
 			}
 		});
 
-		mnuItemSalir.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-				System.exit (0);
-			}
-		});
-
-		mnuItemDeshacer.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
-			}
-		});
-
-		mnuItemRehacer.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){			}
-		});
-
-		mnuItemGuardar.addActionListener(new ActionListener(){
-			public void actionPerformed (ActionEvent arg0){
-				try{
+		mnuItemGuardar.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				try {
 					PrintWriter pw;
-					pw=new PrintWriter (fichero);
-					pw.close ();
-				}catch (FileNotFoundException e){
-					e.printStackTrace () ;
+					pw = new PrintWriter(fichero);
+					pw.write(generateFileFormat());
+					pw.close();
+					String message = "Se ha guardado correctamente en " + fichero.toString();
+					JOptionPane.showMessageDialog(null, message, "Guardado correctamente",
+							JOptionPane.INFORMATION_MESSAGE);
+				} catch (FileNotFoundException e) {
+					JOptionPane.showMessageDialog(null, "Fichero no encontrado", "Error inesperado",
+							JOptionPane.ERROR_MESSAGE);
 				}
 			}
 		});
 
-		mnuItemGuardarComo.addActionListener(new ActionListener(){
-			public void actionPerformed (ActionEvent arg0){
-				try{
+		mnuItemGuardarComo.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent arg0) {
+				try {
 					JFileChooser dlg;
-					dlg=new JFileChooser ();
-					dlg.showDialog (null, "guardar como");
-					fichero=dlg.getSelectedFile ();
+					dlg = new JFileChooser();
+					dlg.showDialog(null, "Guardar Como");
+					fichero = dlg.getSelectedFile();
 					PrintWriter pw;
-					pw=new PrintWriter (fichero);
-					pw.close ();
-				}catch (FileNotFoundException e){
-					e.printStackTrace ();
+					pw = new PrintWriter(fichero);
+					pw.write(generateFileFormat());
+					pw.close();
+					mnuItemGuardar.setEnabled(true);
+					String message = "Se ha guardado correctamente en " + fichero.toString();
+					JOptionPane.showMessageDialog(null, message, "Guardado correctamente",
+							JOptionPane.INFORMATION_MESSAGE);
+				} catch (FileNotFoundException e) {
+					JOptionPane.showMessageDialog(null, "Fichero no encontrado", "Error inesperado",
+							JOptionPane.ERROR_MESSAGE);
 				}
+			}
+		});
+
+		mnuItemSalir.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				System.exit(0);
+			}
+		});
+
+		mnuItemDeshacer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+			}
+		});
+
+		mnuItemRehacer.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
 			}
 		});
 	}
-	
+
+	private String generateFileFormat() {
+		StringBuffer out = new StringBuffer();
+		boolean celdasVacias = false;
+		out.append(this.rows).append(" ").append(this.cols).append("\n");
+		for (int i = 1; i <= this.rows; i++) {
+			for (int j = 1; j <= this.cols; j++) {
+				if (table.getValueAt(i, j) == null) {
+					celdasVacias = true;
+					out.append("0");
+				} else {
+					out.append(table.getValueAt(i, j));
+				}
+
+				if (j == this.cols)
+					out.append("\n");
+				else
+					out.append(" ");
+			}
+		}
+
+		if (celdasVacias) {
+			JOptionPane.showMessageDialog(null, "Las celdas vacias se sustituiran por 0's", "Celdas vacias",
+					JOptionPane.WARNING_MESSAGE);
+		}
+
+		return out.toString();
+	}
+
+	private boolean isEmpty() {
+		for (int i = 1; i <= this.rows; i++)
+			for (int j = 1; j <= this.cols; j++)
+				if (!(table.getValueAt(i, j) == null))
+					return false;
+		return true;
+	}
+
+	private int[] askForParameters() {
+		DialogoParametros params = new DialogoParametros(this);
+		return new int[] { params.getRows(), params.getCols() };
+	}
+
 }
 
 class DialogoParametros extends JDialog {
 
 	private JTextField tfRows, tfCols;
-	
+
 	public DialogoParametros(Spreadsheet spreadsheet) {
-		
-		super(spreadsheet, "Parametros de la hoja", true);		
-		
+
+		super(spreadsheet, "Parametros de la hoja", true);
+
 		/* Colocacion de todos los componentes del Verifier */
 		JPanel panelBotones = new JPanel();
 		JPanel panelIzdo = new JPanel();
@@ -326,42 +399,53 @@ class DialogoParametros extends JDialog {
 		panelIzdo.add(new JLabel("Columnas"));
 		panelDerecho.add(tfRows);
 		panelDerecho.add(Box.createRigidArea(new Dimension(10, 5)));
-		panelDerecho.add(tfCols);		
+		panelDerecho.add(tfCols);
 		panelBotones.add(bCrearHoja);
 		panelBotones.add(bSalir);
 		getContentPane().add(panelIzdo, BorderLayout.WEST);
 		getContentPane().add(panelDerecho, BorderLayout.EAST);
 		getContentPane().add(panelBotones, BorderLayout.SOUTH);
-		
-		/* Comprobacion al intentar crear la hoja de que todos los parametros son correctos. */
+
+		/*
+		 * Comprobacion al intentar crear la hoja de que todos los parametros son
+		 * correctos.
+		 */
 		bCrearHoja.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				StringBuffer exception = new StringBuffer("");
-				if(!Solver.isANum(tfRows.getText())) exception.append("El valor introducido para las filas no es un valor numérico.\n");
-				if(!Solver.isANum(tfCols.getText())) exception.append("El valor introducido para las columnas no es un valor numérico.\n");
-				if(!exception.toString().isEmpty()){
-					JOptionPane.showMessageDialog(null,exception.toString(), "Parametros incorrectos", JOptionPane.ERROR_MESSAGE);
+				if (!Solver.isANum(tfRows.getText()))
+					exception.append("El valor introducido para las filas no es un valor numérico.\n");
+				if (!Solver.isANum(tfCols.getText()))
+					exception.append("El valor introducido para las columnas no es un valor numérico.\n");
+				if (!exception.toString().isEmpty()) {
+					JOptionPane.showMessageDialog(null, exception.toString(), "Parametros incorrectos",
+							JOptionPane.ERROR_MESSAGE);
 				} else {
 					int tempRows = Integer.parseInt(tfRows.getText());
 					int tempCols = Integer.parseInt(tfCols.getText());
-					if(Solver.areRowsOk(tempRows) && Solver.areColsOk(tempCols)) {
+					if (Solver.areRowsOk(tempRows) && Solver.areColsOk(tempCols)) {
 						dispose();
 					} else {
-						if(tempRows<0) exception.append("El valor introducido para las filas es demasiado pequeño.\n");
-						else if(tempRows > 999) exception.append("El valor introducido para las filas es demasiado grande.\n");
-						
-						if(tempCols < 0) exception.append("El valor introducido para las columnas es demasiado pequeño.\n");
-						else if(tempCols > 18278) exception.append("El valor introducido para las filas es demasiado grande.\n");
-						
-						JOptionPane.showMessageDialog(null,exception.toString(), "Parametros incorrectos", JOptionPane.ERROR_MESSAGE);
+						if (tempRows < 0)
+							exception.append("El valor introducido para las filas es demasiado pequeño.\n");
+						else if (tempRows > 999)
+							exception.append("El valor introducido para las filas es demasiado grande.\n");
+
+						if (tempCols < 0)
+							exception.append("El valor introducido para las columnas es demasiado pequeño.\n");
+						else if (tempCols > 18278)
+							exception.append("El valor introducido para las filas es demasiado grande.\n");
+
+						JOptionPane.showMessageDialog(null, exception.toString(), "Parametros incorrectos",
+								JOptionPane.ERROR_MESSAGE);
 					}
 				}
 			}
 		});
-		
+
 		/* El salir hace que la aplicacion se detenga. */
-		bSalir.addActionListener(new ActionListener(){
-			public void actionPerformed(ActionEvent e){
+		bSalir.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
 				System.exit(0);
 			}
 		});
@@ -376,22 +460,21 @@ class DialogoParametros extends JDialog {
 		/* Configuraciones finales del dialogo. */
 		((BorderLayout) getContentPane().getLayout()).setHgap(5);
 		((BorderLayout) getContentPane().getLayout()).setVgap(5);
-		((JPanel) getContentPane()).setBorder(BorderFactory.createEmptyBorder(5,5,5,5));
+		((JPanel) getContentPane()).setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		pack();
-		setLocationRelativeTo(null);		
+		setLocationRelativeTo(null);
 		setVisible(true);
 		setResizable(false);
 	}
-	
+
 	public int getRows() {
 		return Integer.parseInt(this.tfRows.getText());
 	}
-	
+
 	public int getCols() {
 		return Integer.parseInt(this.tfCols.getText());
 	}
-	
-	
+
 }
 
 class TableColour extends javax.swing.table.DefaultTableCellRenderer {
