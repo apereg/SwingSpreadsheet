@@ -8,10 +8,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
+import javax.management.RuntimeErrorException;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -59,15 +64,14 @@ public class Spreadsheet extends JFrame {
 	File fichero;
 
 	public static void main(String args[]) {
-		Spreadsheet te = new Spreadsheet();
-		te.setBounds(0, 0, 500, 500);
-		te.setVisible(true);
+		Spreadsheet app = new Spreadsheet();
+        app.setExtendedState(MAXIMIZED_BOTH);
+		app.setVisible(true);
 	}
 
 	public Spreadsheet() {
 
 		this.setTitle("Hoja de calculo");
-		this.setBounds(0, 0, 1300, 444);
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		pano = new JPanel();
@@ -161,7 +165,6 @@ public class Spreadsheet extends JFrame {
 		/* Ultimos retoques de la interfaz */
 		this.setJMenuBar(mnuBar);
 		getContentPane().add(pano);
-
 		/*
 		 * Listener que modifica el label segun la celda sobre la que se esta
 		 * seleccionando
@@ -179,23 +182,22 @@ public class Spreadsheet extends JFrame {
 		});
 		/* Accion del boton de resolver */
 		btnResolver.addActionListener(new ActionListener() {
+			
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();
 				DefaultTableModel model = (DefaultTableModel) table.getModel();
 				String[][] tableToSolve = new String[rows][cols];
 				StringBuffer out = new StringBuffer("");
 
 				for (int i = 1; i <= tableToSolve.length; i++) {
-					for (int j = 1; j <= tableToSolve.length; j++) {
-						String aux = table.getValueAt(i, j) + "";
-						if (table.getValueAt(i, j) == null)
-							aux = "";
-						if (aux == "") {
+					for (int j = 1; j <= tableToSolve[0].length; j++) {
+						if (table.getValueAt(i, j) == null) {
 							out.append("La posicion " + Solver.getLetter(i) + "" + j + " esta vacia\n");
 							table.setValueAt("0", i, j);
 							tableToSolve[i - 1][j - 1] = "0";
 						} else {
-							tableToSolve[i - 1][j - 1] = aux;
+							tableToSolve[i - 1][j - 1] = table.getValueAt(i, j) + "";
 						}
 					}
 				}
@@ -219,7 +221,7 @@ public class Spreadsheet extends JFrame {
 					solver.resolve();
 					solution = solver.getSolution();
 					for (int i = 1; i <= solution.length; i++) {
-						for (int j = 1; j <= solution.length; j++) {
+						for (int j = 1; j <= solution[0].length; j++) {
 							model.setValueAt(solution[i - 1][j - 1], i, j);
 						}
 					}
@@ -234,8 +236,9 @@ public class Spreadsheet extends JFrame {
 		/* Creacion de cada uno de los listener asociados a cada submenu */
 		mnuItemNuevo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();
 				int resp = JOptionPane.YES_OPTION;
-				if (!isEmpty()) {
+				if(!isEmpty() && !mnuItemGuardar.isEnabled()){
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
 							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
@@ -252,33 +255,69 @@ public class Spreadsheet extends JFrame {
 
 		mnuItemAbrir.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				JFileChooser dlg;
-				dlg = new JFileChooser();
-				dlg.showDialog(null, "Abrir");
-				fichero = dlg.getSelectedFile();
-
-				// leemos el fichero seleccionado
-				FileInputStream in;
-				try {
-					in = new FileInputStream(fichero);
-					BufferedReader br;
-					br = new BufferedReader(new InputStreamReader(in));
-					// El contenido que vamos leyendo lo metemos en el JTextArea
-					while ((br.readLine()) != null) {
-						// Este \n puede ser diferente (/n/r) en Linux
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();
+				JFileChooser fileChooser = new JFileChooser();
+				fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+				int result = fileChooser.showOpenDialog(getParent());
+				if (result == JFileChooser.APPROVE_OPTION) {
+				    File selectedFile = fileChooser.getSelectedFile();
+				    ArrayList<String> newSheet = new ArrayList<String>();
+				    try {
+						BufferedReader reader = new BufferedReader(new FileReader(selectedFile));
+						while(reader.readLine() != null) {
+							newSheet.add(reader.readLine()); //TODO Se lee mal, no todas las lineas // TODO usar strinbuffer
+						}
+						reader.close();
+				    }catch (Exception e){
+				    	JOptionPane.showMessageDialog(null, "Error durante la lectura de la hoja", "No se pudo abrir", JOptionPane.ERROR_MESSAGE);
 					}
-					br.close();
-					mnuItemGuardar.setEnabled(true);
-				} catch (FileNotFoundException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
+				    
+				    for (int k = 0; k < newSheet.size(); k++) {
+						System.out.println(newSheet.get(k));
+					}
+				    
+				    try {
+				    	for (int k = 0; k < newSheet.size(); k++) {
+							newSheet.get(k).replaceAll(" ", ",");
+						}
+				    	if(newSheet.isEmpty()) throw new RuntimeException("Fichero vacio");
+				    	if(newSheet.get(0).split(",").length != 2) throw new RuntimeException("Filas o columnas incorrectas");
+				    	if(!Solver.isANum(newSheet.get(0).split(",")[0]) && !Solver.isANum(newSheet.get(0).split(",")[1])) throw new RuntimeException("Filas o columnas incorrectas");
+				    	
+				    	int tempRows = Integer.parseInt(newSheet.get(0).split(" ")[0]);
+				    	int tempCols = Integer.parseInt(newSheet.get(0).split(" ")[1]);
+				    	if(!Solver.areRowsOk(tempRows) || !Solver.areColsOk(tempCols)) throw new RuntimeException("Filas o columnas incorrectas");
+				 
+				    	newSheet.remove(0);
+				    	String[][] newContent = new String[tempRows][tempCols];
+				    	if(newSheet.size() != tempRows) throw new RuntimeException("Filas incorrectas");
+				    	for (int i = 0; i < tempRows; i++) {
+							if(newSheet.get(i).split(" ").length != tempCols) throw new RuntimeException("Columnas incorrectas");
+							for (int j = 0; j < tempCols; j++) {
+								newContent[i][j] = newSheet.get(i).split(",")[j];
+							}
+						}
+				    	/* Si se ha llegado aqui todo es correcto. */
+					    redimensionateTable(tempRows, tempCols);
+					    for (int i = 0; i <= newContent.length; i++) {
+							for (int j = 0; j <= newContent[0].length; j++) {
+								table.setValueAt(newContent[i+1][j+1], i, j);
+							}
+						}
+					    fichero = selectedFile;
+				    }catch(RuntimeException e) {
+				    	String exception = "Error durante la lectura de la hoja\n" + e.getMessage();
+				    	JOptionPane.showMessageDialog(null, exception, "No se pudo abrir", JOptionPane.ERROR_MESSAGE);
+				    }
+				    
+				    System.out.println("Selected file: " + selectedFile.getAbsolutePath());
 				}
 			}
 		});
 
 		mnuItemGuardar.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();
 				try {
 					PrintWriter pw;
 					pw = new PrintWriter(fichero);
@@ -296,6 +335,7 @@ public class Spreadsheet extends JFrame {
 
 		mnuItemGuardarComo.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();
 				try {
 					JFileChooser dlg;
 					dlg = new JFileChooser();
@@ -318,17 +358,20 @@ public class Spreadsheet extends JFrame {
 
 		mnuItemSalir.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();
 				System.exit(0);
 			}
 		});
 
 		mnuItemDeshacer.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();	
 			}
 		});
 
 		mnuItemRehacer.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				if(table.isEditing()) table.getCellEditor().stopCellEditing();			
 			}
 		});
 	}
@@ -405,6 +448,12 @@ public class Spreadsheet extends JFrame {
 		
 		this.rows = newRows;
 		this.cols = newCols;
+		
+		for (int i = 1; i <= this.rows; i++) {
+			for (int j = 1; j <= this.cols; j++) {
+				table.setValueAt(" ", i, j);
+			}
+		}
 		
 	}
 

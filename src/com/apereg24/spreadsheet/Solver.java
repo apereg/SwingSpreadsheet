@@ -16,7 +16,7 @@ public class Solver {
 		this.entry = input;
 		this.solution = new int[numRows][numCols];
 		for (int k = 0; k < input.length; k++) {
-			for (int l = 0; l < input.length; l++) {
+			for (int l = 0; l < input[0].length; l++) {
 				if (Solver.isANum(entry[k][l])) {
 					solution[k][l] = Integer.parseInt(entry[k][l]);
 					entry[k][l] = "";
