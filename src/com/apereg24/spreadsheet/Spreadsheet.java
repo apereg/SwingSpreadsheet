@@ -7,17 +7,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 
-import javax.management.RuntimeErrorException;
-import javax.swing.AbstractAction;
-import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -41,7 +34,6 @@ import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
 
 import java.awt.Font;
 import java.awt.Color;
@@ -80,7 +72,7 @@ public class Spreadsheet extends JFrame {
 		pano.setAutoscrolls(true);
 		pano.setLayout(new BorderLayout(0, 0));
 
-		/* Creacion de la menubar y los submenus requeridos */
+		/* Creacion de la menubar y los submenus requeridos con los shortcuts de acceso*/
 		mnuBar = new JMenuBar();
 
 		KeyStroke keyStrokeToOpen;
@@ -118,7 +110,7 @@ public class Spreadsheet extends JFrame {
 		mnuModificar.add(mnuItemRehacer);
 		mnuBar.add(mnuModificar);
 
-		/* Creacion del JDialog que recoge los parametros de inicio de la ejecucion. */
+		/* Llamada al JDialog de inicializacion y recogida de los parametros de inicio de la ejecucion. */
 		DialogoParametros params = new DialogoParametros(this);
 		this.rows = params.getRows();
 		this.cols = params.getCols();
@@ -134,11 +126,12 @@ public class Spreadsheet extends JFrame {
 		};
 		table = new JTable(model);
 		table.setFont(new Font("Arial", Font.PLAIN, 12));
-		// table.setDefaultRenderer(Object.class, new GradeRenderer());
 
 		/* Se añaden las filas y columnas con los identificadores */
-		JTable tableAux = new JTable(this.rows + 1, this.cols + 1); // Se crea una tabla aux para obtener los nombres de
-																	// las columnas
+		
+		/* Se crea una tabla aux para obtener los nombres de las columnas */
+		JTable tableAux = new JTable(this.rows + 1, this.cols + 1); 
+		
 		model.addColumn("Index");
 		for (int i = 0; i <= this.rows; i++) {
 			model.addRow(new String[] { "" });
@@ -149,7 +142,8 @@ public class Spreadsheet extends JFrame {
 			model.addColumn(tableAux.getColumnName(i - 1));
 			table.setValueAt(table.getColumnName(i), 0, i);
 		}
-
+		
+		/* Se crea un table colour para pintar los encabezados */
 		final TableColour tce = new TableColour();
 		for (int i = 0; i <= this.cols; i++) {
 			table.getColumnModel().getColumn(i).setCellRenderer(tce);
@@ -164,7 +158,6 @@ public class Spreadsheet extends JFrame {
 
 		/* Creacion de la etiqueta que marca la fila que esta siendo editada */
 		editLabel = new JLabel("No se está seleccionando ninguna celda");
-		editLabel.setBackground(Color.ORANGE);
 		editLabel.setFont(new Font("Arial", Font.PLAIN, 16));
 		editLabel.setHorizontalAlignment(SwingConstants.CENTER);
 		pano.add(editLabel, BorderLayout.NORTH);
@@ -178,10 +171,8 @@ public class Spreadsheet extends JFrame {
 		/* Ultimos retoques de la interfaz */
 		this.setJMenuBar(mnuBar);
 		getContentPane().add(pano);
-		/*
-		 * Listener que modifica el label segun la celda sobre la que se esta
-		 * seleccionando
-		 */
+		
+		/* Modificador del JLabel segun la casilla seleccionada */
 		table.addMouseListener(new java.awt.event.MouseAdapter() {
 			@Override
 			public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -193,6 +184,7 @@ public class Spreadsheet extends JFrame {
 					editLabel.setText("Se esta pulsando sobre la celda " + col + "" + row);
 			}
 		});
+		
 		/* Accion del boton de resolver */
 		btnResolver.addActionListener(new ActionListener() {
 
@@ -200,6 +192,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
+				editLabel.setText("Se esta pulsando sobre el encabezado");
 				DefaultTableModel model = (DefaultTableModel) table.getModel();
 				String[][] tableToSolve = new String[rows][cols];
 				StringBuffer out = new StringBuffer("");
@@ -252,6 +245,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
+				editLabel.setText("Se esta pulsando sobre el encabezado");
 				int resp = JOptionPane.YES_OPTION;
 				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?",
@@ -272,6 +266,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
+				editLabel.setText("Se esta pulsando sobre el encabezado");
 				int resp = JOptionPane.YES_OPTION;
 				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?",
@@ -335,7 +330,8 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
-				try {
+				editLabel.setText("Se esta pulsando sobre el encabezado"); 
+				try{
 					PrintWriter pw;
 					pw = new PrintWriter(fichero);
 					pw.write(generateFileFormat());
@@ -354,6 +350,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
+				editLabel.setText("Se esta pulsando sobre el encabezado");
 				try {
 					JFileChooser dlg;
 					dlg = new JFileChooser();
@@ -378,6 +375,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
+				editLabel.setText("Se esta pulsando sobre el encabezado");
 				System.exit(0);
 			}
 		});
@@ -386,6 +384,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
+				editLabel.setText("Se esta pulsando sobre el encabezado");
 			}
 		});
 
@@ -393,6 +392,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
+				editLabel.setText("Se esta pulsando sobre el encabezado");
 			}
 		});
 	}

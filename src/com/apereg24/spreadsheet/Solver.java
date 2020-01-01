@@ -21,7 +21,7 @@ public class Solver {
 					solution[k][l] = Integer.parseInt(entry[k][l]);
 					entry[k][l] = "";
 				} else {
-					solution[k][l] = Integer.MIN_VALUE;
+					solution[k][l] = 0;
 				}
 			}
 		}
@@ -53,12 +53,10 @@ public class Solver {
 	private int resolveFormula(String formula, int row, int column) throws SpreadsheetException {
 		int result = 0, letra = -1;
 		if(!this.entry[row][column].startsWith("=")) throw new SpreadsheetException("Error en la celda " +getLetter(row)+""+(column+1)+ "\nNo es una formula.\n");
-		System.out.println("Se va a resolver la formula " +formula);
 		formula = formula.substring(1, formula.length());
 		formula = formula.replaceAll("\\+", ",");
 		String[] formulaSplitted = formula.split(",");
 		for (int i = 0; i < formulaSplitted.length; i++) {
-			System.out.println("Se va a resolver el trozico " +formulaSplitted[i]);
 			letra = -1;
 			StringBuffer Num = new StringBuffer();
 			StringBuffer Letter = new StringBuffer();	
