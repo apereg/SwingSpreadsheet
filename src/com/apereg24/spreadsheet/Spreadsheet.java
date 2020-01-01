@@ -192,7 +192,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent e) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
-				editLabel.setText("Se esta pulsando sobre el encabezado");
+				editLabel.setText("No se está seleccionando ninguna celda");
 				DefaultTableModel model = (DefaultTableModel) table.getModel();
 				String[][] tableToSolve = new String[rows][cols];
 				StringBuffer out = new StringBuffer("");
@@ -245,7 +245,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
-				editLabel.setText("Se esta pulsando sobre el encabezado");
+				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
 				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?",
@@ -266,7 +266,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
-				editLabel.setText("Se esta pulsando sobre el encabezado");
+				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
 				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?",
@@ -330,7 +330,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
-				editLabel.setText("Se esta pulsando sobre el encabezado"); 
+				editLabel.setText("No se está seleccionando ninguna celda");
 				try{
 					PrintWriter pw;
 					pw = new PrintWriter(fichero);
@@ -350,7 +350,7 @@ public class Spreadsheet extends JFrame {
 			public void actionPerformed(ActionEvent arg0) {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
-				editLabel.setText("Se esta pulsando sobre el encabezado");
+				editLabel.setText("No se está seleccionando ninguna celda");
 				try {
 					JFileChooser dlg;
 					dlg = new JFileChooser();
