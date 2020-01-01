@@ -2,6 +2,7 @@ package com.apereg24.spreadsheet;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -34,6 +35,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.KeyStroke;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -81,11 +83,18 @@ public class Spreadsheet extends JFrame {
 		/* Creacion de la menubar y los submenus requeridos */
 		mnuBar = new JMenuBar();
 
+		KeyStroke keyStrokeToOpen;
 		mnuArchivo = new JMenu("Archivo");
 		mnuItemNuevo = new JMenuItem("Nuevo");
+		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_N, KeyEvent.CTRL_DOWN_MASK);
+		mnuItemNuevo.setAccelerator(keyStrokeToOpen);
 		mnuItemAbrir = new JMenuItem("Abrir");
+		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_O, KeyEvent.CTRL_DOWN_MASK);
+		mnuItemAbrir.setAccelerator(keyStrokeToOpen);
 		mnuGuardar = new JMenu("Guardar");
 		mnuItemGuardar = new JMenuItem("Guardar");
+		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK);
+		mnuItemGuardar.setAccelerator(keyStrokeToOpen);
 		mnuItemGuardar.setEnabled(false);
 		mnuItemGuardarComo = new JMenuItem("Guardar como");
 		mnuGuardar.add(mnuItemGuardar);
@@ -100,7 +109,11 @@ public class Spreadsheet extends JFrame {
 
 		mnuModificar = new JMenu("Modificar");
 		mnuItemDeshacer = new JMenuItem("Deshacer");
+		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK);
+		mnuItemDeshacer.setAccelerator(keyStrokeToOpen);
 		mnuItemRehacer = new JMenuItem("Rehacer");
+		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK);
+		mnuItemRehacer.setAccelerator(keyStrokeToOpen);
 		mnuModificar.add(mnuItemDeshacer);
 		mnuModificar.add(mnuItemRehacer);
 		mnuBar.add(mnuModificar);
