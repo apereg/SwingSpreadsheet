@@ -402,15 +402,23 @@ public class Spreadsheet extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				TableCellListener tcl = (TableCellListener) e.getSource();
-				System.out.println("En [" + tcl.getRow() + ", " + tcl.getColumn() + "]");
-				if (tcl.getOldValue() == null) {
-					System.out.println("Habia null y metemos un vacio");
-					undoStack.push(new BoxSheet("", tcl.getRow(), tcl.getColumn()));
-				} else {
-					if ((String) tcl.getOldValue() != (String) tcl.getNewValue()) {
-						undoStack.push(new BoxSheet((String) tcl.getOldValue(), tcl.getRow(), tcl.getColumn()));
-						System.out.println("Habia " + (String) tcl.getOldValue());
+				if(!(tcl.getRow() == 0 || tcl.getColumn() == 0)) {	
+					if (tcl.getOldValue() == null) {
+						if(!tcl.getNewValue().equals("")){
+							System.out.println("Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un vacio");
+							undoStack.push(new BoxSheet("", tcl.getRow(), tcl.getColumn()));	
+							//TODO Meter aqui un vacio
+						}
+					} else {
+						undoStack.push(new BoxSheet(tcl.getOldValue(), tcl.getRow(), tcl.getColumn()));
+						System.out.println("Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un " +tcl.getOldValue());
+						if(!redoStack.isEmpty()) {
+							redoStack.setSize(0);
+							System.out.println("Se vacia la cola de rehacer");
+							//TODO Ver porque coño no se esta vaciando creo que es porque como no se mete na pues no queda na
+						}
 					}
+						
 				}
 			}
 		};
@@ -423,8 +431,11 @@ public class Spreadsheet extends JFrame {
 						throw new RuntimeException("Nada que deshacer");
 					// TODO Filtrar si lo que habia aqui era nullable
 					BoxSheet undoable = undoStack.pop();
+					System.out.println("Se deshace y en la cola de deshacer hay: " +undoStack.size());
+					System.out.println("DESHACER: Se saca que en [" +undoable.getI()+ ", " +undoable.getJ()+ "] habia un " +undoable.getValue());
 					table.setValueAt(undoable.getValue(), undoable.getI(), undoable.getJ());
 					redoStack.push(undoable);
+					System.out.println("Y se mete en la cola de rehacer que ahora tiene: " +redoStack.size());
 				} catch (RuntimeException exc) {
 					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
@@ -438,10 +449,13 @@ public class Spreadsheet extends JFrame {
 				try {
 					if (redoStack.empty())
 						throw new RuntimeException("Nada que rehacer");
-					// TODO Filtrar si lo que habia aqui era nullable
 					BoxSheet redoable = redoStack.pop();
+					System.out.println("Se rehace y en la cola de rehacer hay: " +redoStack.size());
+					System.out.println("REHACER: Se saca que en [" +redoable.getI()+ ", " +redoable.getJ()+ "] habia un " +redoable.getValue());
+					//TODO Si que saca todo bien pero luego no lo mete bien
 					table.setValueAt(redoable.getValue(), redoable.getI(), redoable.getJ());
 					undoStack.push(redoable);
+					System.out.println("Y se mete en la cola de deshacer que ahora tiene: " +undoStack.size());
 				} catch (RuntimeException exc) {
 					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
@@ -663,19 +677,19 @@ class TableColour extends javax.swing.table.DefaultTableCellRenderer {
 
 class BoxSheet {
 
-	String value;
+	Object value;
 
 	int i;
 
 	int j;
 
-	public BoxSheet(String value, int i, int j) {
-		this.value = value;
+	public BoxSheet(Object object, int i, int j) {
+		this.value = object;
 		this.i = i;
 		this.j = j;
 	}
 
-	public String getValue() {
+	public Object getValue() {
 		return value;
 	}
 
