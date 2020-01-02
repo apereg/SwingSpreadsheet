@@ -2,6 +2,8 @@ package com.apereg24.spreadsheet;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -10,7 +12,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
+import java.util.Stack;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -33,6 +38,10 @@ import javax.swing.KeyStroke;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
+import javax.swing.event.CellEditorListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.TableModelEvent;
+import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 
 import java.awt.Font;
@@ -47,6 +56,9 @@ public class Spreadsheet extends JFrame {
 	JScrollPane scroll;
 	JTable table;
 	JButton btnResolver;
+
+	Stack<BoxSheet> undoStack = new Stack<BoxSheet>();
+	Stack<BoxSheet> redoStack = new Stack<BoxSheet>();
 
 	JScrollPane desplaLateral, desplaHorizontal;
 
@@ -72,7 +84,9 @@ public class Spreadsheet extends JFrame {
 		pano.setAutoscrolls(true);
 		pano.setLayout(new BorderLayout(0, 0));
 
-		/* Creacion de la menubar y los submenus requeridos con los shortcuts de acceso*/
+		/*
+		 * Creacion de la menubar y los submenus requeridos con los shortcuts de acceso
+		 */
 		mnuBar = new JMenuBar();
 
 		KeyStroke keyStrokeToOpen;
@@ -110,7 +124,10 @@ public class Spreadsheet extends JFrame {
 		mnuModificar.add(mnuItemRehacer);
 		mnuBar.add(mnuModificar);
 
-		/* Llamada al JDialog de inicializacion y recogida de los parametros de inicio de la ejecucion. */
+		/*
+		 * Llamada al JDialog de inicializacion y recogida de los parametros de inicio
+		 * de la ejecucion.
+		 */
 		DialogoParametros params = new DialogoParametros(this);
 		this.rows = params.getRows();
 		this.cols = params.getCols();
@@ -128,10 +145,11 @@ public class Spreadsheet extends JFrame {
 		table.setFont(new Font("Arial", Font.PLAIN, 12));
 
 		/* Se añaden las filas y columnas con los identificadores */
-		
+
 		/* Se crea una tabla aux para obtener los nombres de las columnas */
-		JTable tableAux = new JTable(this.rows + 1, this.cols + 1); 
-		
+
+		JTable tableAux = new JTable(this.rows + 1, this.cols + 1);
+
 		model.addColumn("Index");
 		for (int i = 0; i <= this.rows; i++) {
 			model.addRow(new String[] { "" });
@@ -142,7 +160,7 @@ public class Spreadsheet extends JFrame {
 			model.addColumn(tableAux.getColumnName(i - 1));
 			table.setValueAt(table.getColumnName(i), 0, i);
 		}
-		
+
 		/* Se crea un table colour para pintar los encabezados */
 		final TableColour tce = new TableColour();
 		for (int i = 0; i <= this.cols; i++) {
@@ -171,7 +189,7 @@ public class Spreadsheet extends JFrame {
 		/* Ultimos retoques de la interfaz */
 		this.setJMenuBar(mnuBar);
 		getContentPane().add(pano);
-		
+
 		/* Modificador del JLabel segun la casilla seleccionada */
 		table.addMouseListener(new java.awt.event.MouseAdapter() {
 			@Override
@@ -184,7 +202,7 @@ public class Spreadsheet extends JFrame {
 					editLabel.setText("Se esta pulsando sobre la celda " + col + "" + row);
 			}
 		});
-		
+
 		/* Accion del boton de resolver */
 		btnResolver.addActionListener(new ActionListener() {
 
@@ -248,8 +266,8 @@ public class Spreadsheet extends JFrame {
 				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
 				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
-					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?",
-							"Alerta", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
+							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
 				if (resp == JOptionPane.YES_OPTION) {
 					fichero = null;
@@ -269,8 +287,8 @@ public class Spreadsheet extends JFrame {
 				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
 				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
-					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?",
-							"Alerta", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
+							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
 				if (resp == JOptionPane.YES_OPTION) {
 					JFileChooser fileChooser = new JFileChooser();
@@ -310,7 +328,7 @@ public class Spreadsheet extends JFrame {
 							redimensionateTable(tempRows, tempCols);
 							for (int i = 1; i <= tempRows; i++) {
 								for (int j = 1; j <= tempCols; j++) {
-									table.setValueAt(newSheetArray[(i-1)*tempCols+(j-1)+2], i, j);
+									table.setValueAt(newSheetArray[(i - 1) * tempCols + (j - 1) + 2], i, j);
 								}
 							}
 							rows = tempRows;
@@ -331,7 +349,7 @@ public class Spreadsheet extends JFrame {
 				if (table.isEditing())
 					table.getCellEditor().stopCellEditing();
 				editLabel.setText("No se está seleccionando ninguna celda");
-				try{
+				try {
 					PrintWriter pw;
 					pw = new PrintWriter(fichero);
 					pw.write(generateFileFormat());
@@ -380,19 +398,53 @@ public class Spreadsheet extends JFrame {
 			}
 		});
 
+		Action action = new AbstractAction() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				TableCellListener tcl = (TableCellListener) e.getSource();
+				System.out.println("En [" + tcl.getRow() + ", " + tcl.getColumn() + "]");
+				if (tcl.getOldValue() == null) {
+					System.out.println("Habia null y metemos un vacio");
+					undoStack.push(new BoxSheet("", tcl.getRow(), tcl.getColumn()));
+				} else {
+					if ((String) tcl.getOldValue() != (String) tcl.getNewValue()) {
+						undoStack.push(new BoxSheet((String) tcl.getOldValue(), tcl.getRow(), tcl.getColumn()));
+						System.out.println("Habia " + (String) tcl.getOldValue());
+					}
+				}
+			}
+		};
+		TableCellListener tcl = new TableCellListener(table, action);
+
 		mnuItemDeshacer.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (table.isEditing())
-					table.getCellEditor().stopCellEditing();
-				editLabel.setText("Se esta pulsando sobre el encabezado");
+				try {
+					if (undoStack.empty())
+						throw new RuntimeException("Nada que deshacer");
+					// TODO Filtrar si lo que habia aqui era nullable
+					BoxSheet undoable = undoStack.pop();
+					table.setValueAt(undoable.getValue(), undoable.getI(), undoable.getJ());
+					redoStack.push(undoable);
+				} catch (RuntimeException exc) {
+					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				}
+
 			}
+
 		});
 
 		mnuItemRehacer.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				if (table.isEditing())
-					table.getCellEditor().stopCellEditing();
-				editLabel.setText("Se esta pulsando sobre el encabezado");
+				try {
+					if (redoStack.empty())
+						throw new RuntimeException("Nada que rehacer");
+					// TODO Filtrar si lo que habia aqui era nullable
+					BoxSheet redoable = redoStack.pop();
+					table.setValueAt(redoable.getValue(), redoable.getI(), redoable.getJ());
+					undoStack.push(redoable);
+				} catch (RuntimeException exc) {
+					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+				}
 			}
 		});
 	}
@@ -607,4 +659,31 @@ class TableColour extends javax.swing.table.DefaultTableCellRenderer {
 		return cellComponent;
 	}
 
+}
+
+class BoxSheet {
+
+	String value;
+
+	int i;
+
+	int j;
+
+	public BoxSheet(String value, int i, int j) {
+		this.value = value;
+		this.i = i;
+		this.j = j;
+	}
+
+	public String getValue() {
+		return value;
+	}
+
+	public int getI() {
+		return i;
+	}
+
+	public int getJ() {
+		return j;
+	}
 }
