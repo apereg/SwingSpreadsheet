@@ -276,6 +276,8 @@ public class Spreadsheet extends JFrame {
 					int newRows = newParams[0];
 					int newCols = newParams[1];
 					redimensionateTable(newRows, newCols);
+					undoStack.setSize(0);
+					redoStack.setSize(0);
 				}
 			}
 		});
@@ -334,6 +336,8 @@ public class Spreadsheet extends JFrame {
 							rows = tempRows;
 							cols = tempCols;
 							fichero = selectedFile;
+							undoStack.setSize(0);
+							redoStack.setSize(0);
 						} catch (RuntimeException e) {
 							String exception = "Error durante la lectura de la hoja\n" + e.getMessage();
 							JOptionPane.showMessageDialog(null, exception, "No se pudo abrir",
@@ -405,20 +409,19 @@ public class Spreadsheet extends JFrame {
 				if(!(tcl.getRow() == 0 || tcl.getColumn() == 0)) {	
 					if (tcl.getOldValue() == null) {
 						if(!tcl.getNewValue().equals("")){
-							System.out.println("Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un vacio");
+							System.out.println("LISTENER: Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un vacio");
 							undoStack.push(new BoxSheet("", tcl.getRow(), tcl.getColumn()));	
 							//TODO Meter aqui un vacio
 						}
 					} else {
 						undoStack.push(new BoxSheet(tcl.getOldValue(), tcl.getRow(), tcl.getColumn()));
-						System.out.println("Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un " +tcl.getOldValue());
-						if(!redoStack.isEmpty()) {
-							redoStack.setSize(0);
-							System.out.println("Se vacia la cola de rehacer");
-							//TODO Ver porque coño no se esta vaciando creo que es porque como no se mete na pues no queda na
-						}
+						System.out.println("LISTENER: Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un " +tcl.getOldValue());
+						System.out.println("LISTENER: En la cola de rehacer hay: " +redoStack.size());
 					}
-						
+					if(!redoStack.isEmpty()) {
+						redoStack.setSize(0);
+						System.out.println("POR FAVOR HAZLO: Se vacia la cola de rehacer");					
+					}
 				}
 			}
 		};
@@ -431,11 +434,12 @@ public class Spreadsheet extends JFrame {
 						throw new RuntimeException("Nada que deshacer");
 					// TODO Filtrar si lo que habia aqui era nullable
 					BoxSheet undoable = undoStack.pop();
-					System.out.println("Se deshace y en la cola de deshacer hay: " +undoStack.size());
+					System.out.println("DESHACER: Se deshace y en la cola de deshacer hay: " +undoStack.size());
 					System.out.println("DESHACER: Se saca que en [" +undoable.getI()+ ", " +undoable.getJ()+ "] habia un " +undoable.getValue());
+					BoxSheet toRedo = new BoxSheet(table.getValueAt(undoable.getI(), undoable.getJ()), undoable.getI(), undoable.getJ());
 					table.setValueAt(undoable.getValue(), undoable.getI(), undoable.getJ());
-					redoStack.push(undoable);
-					System.out.println("Y se mete en la cola de rehacer que ahora tiene: " +redoStack.size());
+					redoStack.push(toRedo);
+					System.out.println("DESHACER: Y se mete en la cola de rehacer que ahora tiene: " +redoStack.size());
 				} catch (RuntimeException exc) {
 					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
@@ -450,12 +454,13 @@ public class Spreadsheet extends JFrame {
 					if (redoStack.empty())
 						throw new RuntimeException("Nada que rehacer");
 					BoxSheet redoable = redoStack.pop();
-					System.out.println("Se rehace y en la cola de rehacer hay: " +redoStack.size());
+					System.out.println("REHACER: Se rehace y en la cola de rehacer hay: " +redoStack.size());
 					System.out.println("REHACER: Se saca que en [" +redoable.getI()+ ", " +redoable.getJ()+ "] habia un " +redoable.getValue());
 					//TODO Si que saca todo bien pero luego no lo mete bien
+					BoxSheet toUndo = new BoxSheet(table.getValueAt(redoable.getI(), redoable.getJ()), redoable.getI(), redoable.getJ());
 					table.setValueAt(redoable.getValue(), redoable.getI(), redoable.getJ());
-					undoStack.push(redoable);
-					System.out.println("Y se mete en la cola de deshacer que ahora tiene: " +undoStack.size());
+					undoStack.push(toUndo);
+					System.out.println("REHACER: Y se mete en la cola de deshacer que ahora tiene: " +undoStack.size());
 				} catch (RuntimeException exc) {
 					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
