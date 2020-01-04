@@ -43,7 +43,7 @@ public class Solver {
 	}
 
 	private int resolveCell(int row, int column) throws SpreadsheetException {
-		if (row > this.numRows || row < 0 || column > this.numCols || column < 0) throw new SpreadsheetException("Error en la celda " +getLetter(row)+""+(column+1)+ "\nNo esta correctamente redactada.\n");
+		if (row > this.numRows-1 || row < 0 || column > this.numCols-1 || column < 0) throw new SpreadsheetException("Se esta intentando acceder a una celda que no existe.");
 
 		if (!(this.entry[row][column].isEmpty())) 
 			return resolveFormula(this.entry[row][column], row, column);

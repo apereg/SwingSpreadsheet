@@ -4,7 +4,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -34,6 +36,7 @@ import javax.swing.JSeparator;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.ListSelectionModel;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
@@ -118,7 +121,7 @@ public class Spreadsheet extends JFrame {
 		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_Z, KeyEvent.CTRL_DOWN_MASK);
 		mnuItemDeshacer.setAccelerator(keyStrokeToOpen);
 		mnuItemRehacer = new JMenuItem("Rehacer");
-		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_R, KeyEvent.CTRL_DOWN_MASK);
+		keyStrokeToOpen = KeyStroke.getKeyStroke(KeyEvent.VK_Y, KeyEvent.CTRL_DOWN_MASK);
 		mnuItemRehacer.setAccelerator(keyStrokeToOpen);
 		mnuModificar.add(mnuItemDeshacer);
 		mnuModificar.add(mnuItemRehacer);
@@ -143,6 +146,9 @@ public class Spreadsheet extends JFrame {
 		};
 		table = new JTable(model);
 		table.setFont(new Font("Arial", Font.PLAIN, 12));
+		table.setCellSelectionEnabled(true);
+		ListSelectionModel cellSelectionModel = table.getSelectionModel();
+		cellSelectionModel.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
 		/* Se añaden las filas y columnas con los identificadores */
 
@@ -202,6 +208,30 @@ public class Spreadsheet extends JFrame {
 					editLabel.setText("Se esta pulsando sobre la celda " + col + "" + row);
 			}
 		});
+		
+		table.addKeyListener(new KeyAdapter() {
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				int row = -1;
+				String col = "Index";
+				for (int i = 0; i <= rows; i++) {
+					for (int j = 0; j <= cols; j++) {
+						if(table.isCellSelected(i, j)) {
+							row = i;
+							col = table.getColumnName(j);
+							break;
+						}
+						
+					}
+				}
+				if (row == 0 || col == "Index")
+					editLabel.setText("Se esta pulsando sobre el encabezado");
+				else if(row != -1)
+					editLabel.setText("Se esta pulsando sobre la celda " + col + "" + row);
+			}
+
+		});
 
 		/* Accion del boton de resolver */
 		btnResolver.addActionListener(new ActionListener() {
@@ -217,7 +247,7 @@ public class Spreadsheet extends JFrame {
 
 				for (int i = 1; i <= tableToSolve.length; i++) {
 					for (int j = 1; j <= tableToSolve[0].length; j++) {
-						if (table.getValueAt(i, j) == null) {
+						if (table.getValueAt(i, j) == null || table.getValueAt(i, j) == "") {
 							out.append("La posicion " + Solver.getLetter(i) + "" + j + " esta vacia\n");
 							table.setValueAt("0", i, j);
 							tableToSolve[i - 1][j - 1] = "0";
@@ -319,8 +349,8 @@ public class Spreadsheet extends JFrame {
 						try {
 							if (!Solver.isANum(newSheetArray[0]) || !Solver.isANum(newSheetArray[1]))
 								throw new RuntimeException("Filas o columnas incorrectas");
-							int tempRows = Integer.parseInt(newSheetArray[0]);
-							int tempCols = Integer.parseInt(newSheetArray[1]);
+							int tempRows = Integer.parseInt(newSheetArray[1]);
+							int tempCols = Integer.parseInt(newSheetArray[0]);
 							if (!Solver.areRowsOk(tempRows) || !Solver.areColsOk(tempCols))
 								throw new RuntimeException("Filas o columnas incorrectas");
 
@@ -336,6 +366,7 @@ public class Spreadsheet extends JFrame {
 							rows = tempRows;
 							cols = tempCols;
 							fichero = selectedFile;
+							mnuItemGuardar.setEnabled(true);
 							undoStack.setSize(0);
 							redoStack.setSize(0);
 						} catch (RuntimeException e) {
@@ -408,20 +439,14 @@ public class Spreadsheet extends JFrame {
 				TableCellListener tcl = (TableCellListener) e.getSource();
 				if(!(tcl.getRow() == 0 || tcl.getColumn() == 0)) {	
 					if (tcl.getOldValue() == null) {
-						if(!tcl.getNewValue().equals("")){
-							System.out.println("LISTENER: Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un vacio");
+						if(!tcl.getNewValue().equals(""))
 							undoStack.push(new BoxSheet("", tcl.getRow(), tcl.getColumn()));	
-							//TODO Meter aqui un vacio
-						}
+						
 					} else {
 						undoStack.push(new BoxSheet(tcl.getOldValue(), tcl.getRow(), tcl.getColumn()));
-						System.out.println("LISTENER: Se almacena que en [" +tcl.getRow()+ ", " +tcl.getColumn()+ "] habia un " +tcl.getOldValue());
-						System.out.println("LISTENER: En la cola de rehacer hay: " +redoStack.size());
 					}
-					if(!redoStack.isEmpty()) {
-						redoStack.setSize(0);
-						System.out.println("POR FAVOR HAZLO: Se vacia la cola de rehacer");					
-					}
+					if(!redoStack.isEmpty())
+						redoStack.setSize(0);				
 				}
 			}
 		};
@@ -432,14 +457,10 @@ public class Spreadsheet extends JFrame {
 				try {
 					if (undoStack.empty())
 						throw new RuntimeException("Nada que deshacer");
-					// TODO Filtrar si lo que habia aqui era nullable
 					BoxSheet undoable = undoStack.pop();
-					System.out.println("DESHACER: Se deshace y en la cola de deshacer hay: " +undoStack.size());
-					System.out.println("DESHACER: Se saca que en [" +undoable.getI()+ ", " +undoable.getJ()+ "] habia un " +undoable.getValue());
 					BoxSheet toRedo = new BoxSheet(table.getValueAt(undoable.getI(), undoable.getJ()), undoable.getI(), undoable.getJ());
 					table.setValueAt(undoable.getValue(), undoable.getI(), undoable.getJ());
 					redoStack.push(toRedo);
-					System.out.println("DESHACER: Y se mete en la cola de rehacer que ahora tiene: " +redoStack.size());
 				} catch (RuntimeException exc) {
 					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
@@ -454,13 +475,9 @@ public class Spreadsheet extends JFrame {
 					if (redoStack.empty())
 						throw new RuntimeException("Nada que rehacer");
 					BoxSheet redoable = redoStack.pop();
-					System.out.println("REHACER: Se rehace y en la cola de rehacer hay: " +redoStack.size());
-					System.out.println("REHACER: Se saca que en [" +redoable.getI()+ ", " +redoable.getJ()+ "] habia un " +redoable.getValue());
-					//TODO Si que saca todo bien pero luego no lo mete bien
 					BoxSheet toUndo = new BoxSheet(table.getValueAt(redoable.getI(), redoable.getJ()), redoable.getI(), redoable.getJ());
 					table.setValueAt(redoable.getValue(), redoable.getI(), redoable.getJ());
 					undoStack.push(toUndo);
-					System.out.println("REHACER: Y se mete en la cola de deshacer que ahora tiene: " +undoStack.size());
 				} catch (RuntimeException exc) {
 					JOptionPane.showMessageDialog(null, exc.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
 				}
@@ -471,7 +488,7 @@ public class Spreadsheet extends JFrame {
 	private String generateFileFormat() {
 		StringBuffer out = new StringBuffer();
 		boolean celdasVacias = false;
-		out.append(this.rows).append(" ").append(this.cols).append("\n");
+		out.append(this.cols).append(" ").append(this.rows).append("\n");
 		for (int i = 1; i <= this.rows; i++) {
 			for (int j = 1; j <= this.cols; j++) {
 				if (table.getValueAt(i, j) == null) {
@@ -545,7 +562,7 @@ public class Spreadsheet extends JFrame {
 
 		for (int i = 1; i <= this.rows; i++) {
 			for (int j = 1; j <= this.cols; j++) {
-				table.setValueAt(" ", i, j);
+				table.setValueAt("", i, j);
 			}
 		}
 
