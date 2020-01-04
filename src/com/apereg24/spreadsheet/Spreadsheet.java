@@ -295,7 +295,7 @@ public class Spreadsheet extends JFrame {
 					table.getCellEditor().stopCellEditing();
 				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
-				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
+				if (!isEmpty() && !mnuItemGuardar.isEnabled() && undoStack.isEmpty()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
 							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
@@ -318,7 +318,7 @@ public class Spreadsheet extends JFrame {
 					table.getCellEditor().stopCellEditing();
 				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
-				if (!isEmpty() && !mnuItemGuardar.isEnabled()) {
+				if (!isEmpty() && !mnuItemGuardar.isEnabled() && undoStack.isEmpty()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
 							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
