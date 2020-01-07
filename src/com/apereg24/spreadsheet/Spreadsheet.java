@@ -2,11 +2,8 @@ package com.apereg24.spreadsheet;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
@@ -41,10 +38,6 @@ import javax.swing.ListSelectionModel;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import javax.swing.SwingConstants;
-import javax.swing.event.CellEditorListener;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.TableModelEvent;
-import javax.swing.event.TableModelListener;
 import javax.swing.table.DefaultTableModel;
 
 import java.awt.Font;
@@ -69,6 +62,8 @@ public class Spreadsheet extends JFrame {
 	JMenu mnuModificar, mnuArchivo, mnuGuardar;
 	JMenuItem mnuItemNuevo, mnuItemAbrir, mnuItemGuardar, mnuItemGuardarComo, mnuItemSalir;
 	JMenuItem mnuItemDeshacer, mnuItemRehacer;
+
+	boolean guardarPreguntar = false;
 
 	File fichero;
 
@@ -131,9 +126,13 @@ public class Spreadsheet extends JFrame {
 		 * Llamada al JDialog de inicializacion y recogida de los parametros de inicio
 		 * de la ejecucion.
 		 */
-		DialogoParametros params = new DialogoParametros(this);
-		this.rows = params.getRows();
-		this.cols = params.getCols();
+		DialogoParametros params = new DialogoParametros(this, true);
+		try {
+			this.rows = params.getRows();
+			this.cols = params.getCols();
+		} catch (Exception e1) {
+			System.exit(0);
+		}
 
 		/* Creacion de la tabla con los valores recogidos del JDialog */
 		DefaultTableModel model = new DefaultTableModel() {
@@ -208,7 +207,7 @@ public class Spreadsheet extends JFrame {
 					editLabel.setText("Se esta pulsando sobre la celda " + col + "" + row);
 			}
 		});
-		
+
 		table.addKeyListener(new KeyAdapter() {
 
 			@Override
@@ -217,17 +216,17 @@ public class Spreadsheet extends JFrame {
 				String col = "Index";
 				for (int i = 0; i <= rows; i++) {
 					for (int j = 0; j <= cols; j++) {
-						if(table.isCellSelected(i, j)) {
+						if (table.isCellSelected(i, j)) {
 							row = i;
 							col = table.getColumnName(j);
 							break;
 						}
-						
+
 					}
 				}
 				if (row == 0 || col == "Index")
 					editLabel.setText("Se esta pulsando sobre el encabezado");
-				else if(row != -1)
+				else if (row != -1)
 					editLabel.setText("Se esta pulsando sobre la celda " + col + "" + row);
 			}
 
@@ -295,19 +294,21 @@ public class Spreadsheet extends JFrame {
 					table.getCellEditor().stopCellEditing();
 				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
-				if (!isEmpty() && !mnuItemGuardar.isEnabled() && undoStack.isEmpty()) {
+				if (!isEmpty() || !mnuItemGuardar.isEnabled() && !undoStack.isEmpty()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
 							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
 				if (resp == JOptionPane.YES_OPTION) {
-					fichero = null;
-					mnuItemGuardar.setEnabled(false);
-					int[] newParams = askForParameters();
+					int[] newParams = askForParameters(false);
 					int newRows = newParams[0];
 					int newCols = newParams[1];
-					redimensionateTable(newRows, newCols);
-					undoStack.setSize(0);
-					redoStack.setSize(0);
+					if (newCols != -1 && newRows != -1) {
+						fichero = null;
+						mnuItemGuardar.setEnabled(false);
+						redimensionateTable(newRows, newCols);
+						undoStack.setSize(0);
+						redoStack.setSize(0);
+					}
 				}
 			}
 		});
@@ -318,7 +319,7 @@ public class Spreadsheet extends JFrame {
 					table.getCellEditor().stopCellEditing();
 				editLabel.setText("No se está seleccionando ninguna celda");
 				int resp = JOptionPane.YES_OPTION;
-				if (!isEmpty() && !mnuItemGuardar.isEnabled() && undoStack.isEmpty()) {
+				if (!isEmpty() || !mnuItemGuardar.isEnabled() && !undoStack.isEmpty()) {
 					resp = JOptionPane.showConfirmDialog(null, "Hoja actual sin guardar.\n¿Quiere continuar?", "Alerta",
 							JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
 				}
@@ -389,6 +390,7 @@ public class Spreadsheet extends JFrame {
 					pw = new PrintWriter(fichero);
 					pw.write(generateFileFormat());
 					pw.close();
+					guardarPreguntar = false;
 					String message = "Se ha guardado correctamente en " + fichero.toString();
 					JOptionPane.showMessageDialog(null, message, "Guardado correctamente",
 							JOptionPane.INFORMATION_MESSAGE);
@@ -414,6 +416,7 @@ public class Spreadsheet extends JFrame {
 					pw.write(generateFileFormat());
 					pw.close();
 					mnuItemGuardar.setEnabled(true);
+					guardarPreguntar = false;
 					String message = "Se ha guardado correctamente en " + fichero.toString();
 					JOptionPane.showMessageDialog(null, message, "Guardado correctamente",
 							JOptionPane.INFORMATION_MESSAGE);
@@ -437,16 +440,17 @@ public class Spreadsheet extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				TableCellListener tcl = (TableCellListener) e.getSource();
-				if(!(tcl.getRow() == 0 || tcl.getColumn() == 0)) {	
+				if (!(tcl.getRow() == 0 || tcl.getColumn() == 0)) {
+					guardarPreguntar = true;
 					if (tcl.getOldValue() == null) {
-						if(!tcl.getNewValue().equals(""))
-							undoStack.push(new BoxSheet("", tcl.getRow(), tcl.getColumn()));	
-						
+						if (!tcl.getNewValue().equals(""))
+							undoStack.push(new BoxSheet("", tcl.getRow(), tcl.getColumn()));
+
 					} else {
 						undoStack.push(new BoxSheet(tcl.getOldValue(), tcl.getRow(), tcl.getColumn()));
 					}
-					if(!redoStack.isEmpty())
-						redoStack.setSize(0);				
+					if (!redoStack.isEmpty())
+						redoStack.setSize(0);
 				}
 			}
 		};
@@ -458,7 +462,8 @@ public class Spreadsheet extends JFrame {
 					if (undoStack.empty())
 						throw new RuntimeException("Nada que deshacer");
 					BoxSheet undoable = undoStack.pop();
-					BoxSheet toRedo = new BoxSheet(table.getValueAt(undoable.getI(), undoable.getJ()), undoable.getI(), undoable.getJ());
+					BoxSheet toRedo = new BoxSheet(table.getValueAt(undoable.getI(), undoable.getJ()), undoable.getI(),
+							undoable.getJ());
 					table.setValueAt(undoable.getValue(), undoable.getI(), undoable.getJ());
 					redoStack.push(toRedo);
 				} catch (RuntimeException exc) {
@@ -475,7 +480,8 @@ public class Spreadsheet extends JFrame {
 					if (redoStack.empty())
 						throw new RuntimeException("Nada que rehacer");
 					BoxSheet redoable = redoStack.pop();
-					BoxSheet toUndo = new BoxSheet(table.getValueAt(redoable.getI(), redoable.getJ()), redoable.getI(), redoable.getJ());
+					BoxSheet toUndo = new BoxSheet(table.getValueAt(redoable.getI(), redoable.getJ()), redoable.getI(),
+							redoable.getJ());
 					table.setValueAt(redoable.getValue(), redoable.getI(), redoable.getJ());
 					undoStack.push(toUndo);
 				} catch (RuntimeException exc) {
@@ -521,9 +527,13 @@ public class Spreadsheet extends JFrame {
 		return true;
 	}
 
-	private int[] askForParameters() {
-		DialogoParametros params = new DialogoParametros(this);
-		return new int[] { params.getRows(), params.getCols() };
+	private int[] askForParameters(boolean primeraVez) {
+		DialogoParametros params = new DialogoParametros(this, primeraVez);
+		try {
+			return new int[] { params.getRows(), params.getCols() };
+		} catch (Exception e) {
+			return new int[] { -1, -1 };
+		}
 	}
 
 	private void redimensionateTable(int newRows, int newCols) {
@@ -573,12 +583,14 @@ public class Spreadsheet extends JFrame {
 class DialogoParametros extends JDialog {
 
 	private JTextField tfRows, tfCols;
+	static boolean primeraVez = true;
 
-	public DialogoParametros(Spreadsheet spreadsheet) {
+	public DialogoParametros(Spreadsheet spreadsheet, Boolean primeraVezAbriendo) {
 
 		super(spreadsheet, "Parametros de la hoja", true);
 
 		/* Colocacion de todos los componentes del Verifier */
+		primeraVez = primeraVezAbriendo;
 		JPanel panelBotones = new JPanel();
 		JPanel panelIzdo = new JPanel();
 		JPanel panelDerecho = new JPanel();
@@ -642,14 +654,22 @@ class DialogoParametros extends JDialog {
 		/* El salir hace que la aplicacion se detenga. */
 		bSalir.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-				System.exit(0);
+				if (primeraVez) {
+					System.exit(0);
+				} else {
+					dispose();
+				}
 			}
 		});
 
 		/* Cerrar este cuadro de dialogo tambien hace que la aplicacion se detenga. */
 		addWindowListener(new WindowAdapter() {
 			public void windowClosing(WindowEvent e) {
-				System.exit(0);
+				if (primeraVez) {
+					System.exit(0);
+				} else {
+					dispose();
+				}
 			}
 		});
 
@@ -663,11 +683,11 @@ class DialogoParametros extends JDialog {
 		setResizable(false);
 	}
 
-	public int getRows() {
+	public int getRows() throws Exception {
 		return Integer.parseInt(this.tfRows.getText());
 	}
 
-	public int getCols() {
+	public int getCols() throws Exception {
 		return Integer.parseInt(this.tfCols.getText());
 	}
 
